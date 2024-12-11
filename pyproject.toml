@@ -4,7 +4,11 @@ version = "0.1.0"
 description = ""
 authors = ["dsaks9 <delonsaks@berkeley.edu>"]
 readme = "README.md"
-packages = [{include = "subsidies_dot_io"}, {include = "src"}]
+packages = [
+    {include = "agent"},
+    {include = "embed"},
+    {include = "ui"}
+]
 
 [tool.poetry.dependencies]
 python = ">=3.12,<3.13"

@@ -10,10 +10,10 @@ from llama_index.postprocessor.cohere_rerank import CohereRerank
 
 from qdrant_client import QdrantClient
 
-from src.agent.prompts.prompts import SYSTEM_PROMPT_SUBSIDY_REPORT_AGENT
+from agent.prompts.prompts import SYSTEM_PROMPT_SUBSIDY_REPORT_AGENT
 
-from src.agent.tools.tool_query_subsidies import query_subsidies, SubsidyReportParameters
-from src.agent.tools.utils import check_regions
+from agent.tools.tool_query_subsidies import query_subsidies, SubsidyReportParameters
+from agent.tools.utils import check_regions
 
 
 from phoenix.otel import register

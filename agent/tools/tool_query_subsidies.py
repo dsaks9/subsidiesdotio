@@ -10,8 +10,8 @@ from llama_index.core.vector_stores import MetadataFilter, MetadataFilters, Filt
 
 from qdrant_client import QdrantClient
 
-from src.agent.tools.subsidy_report_parameters import REGIONS, STATUS
-from src.agent.tools.utils import check_regions
+from agent.tools.subsidy_report_parameters import REGIONS, STATUS
+from agent.tools.utils import check_regions
 
 COHERE_API_KEY = os.getenv('COHERE_API_KEY')
 cohere_api_key = COHERE_API_KEY

@@ -1,5 +1,6 @@
 import streamlit as st
-from src.agent.retrievers.retriever_baseline import retrieve_subsidies
+from agent.retrievers.retriever_baseline import retrieve_subsidies
+
 
 def display_node(node):
     """Helper function to display a single node's information"""

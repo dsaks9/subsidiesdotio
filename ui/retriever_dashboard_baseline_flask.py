@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from src.agent.retrievers.retriever_baseline import retrieve_subsidies
+from agent.retrievers.retriever_baseline import retrieve_subsidies
 
 app = Flask(__name__)
 

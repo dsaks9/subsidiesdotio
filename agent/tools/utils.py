@@ -1,4 +1,4 @@
-from src.agent.tools.subsidy_report_parameters import REGIONS, STATUS
+from agent.tools.subsidy_report_parameters import REGIONS, STATUS
 
 def check_regions(regions):
     if regions is not None:
