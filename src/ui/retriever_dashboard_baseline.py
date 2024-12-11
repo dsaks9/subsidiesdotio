@@ -25,11 +25,12 @@ def display_node(node):
         st.markdown("**Relevante informatie:**")
         st.write(node.node.text)
         
-        # Additional metadata in an expander
-        with st.expander("Meer details"):
-            st.write("**Laatste wijziging:**", metadata.get('Laatste wijziging', 'N/A'))
-            st.write("**Aanvraagtermijn:**", metadata.get('Aanvraagtermijn', 'N/A'))
-            st.write("**Indienprocedure:**", metadata.get('Indienprocedure', 'N/A'))
+        # Additional metadata without nested expander
+        st.markdown("---")
+        st.markdown("**Extra details:**")
+        st.write("**Laatste wijziging:**", metadata.get('Laatste wijziging', 'N/A'))
+        st.write("**Aanvraagtermijn:**", metadata.get('Aanvraagtermijn', 'N/A'))
+        st.write("**Indienprocedure:**", metadata.get('Indienprocedure', 'N/A'))
 
 def main():
     # Set page config

@@ -1,6 +1,7 @@
 import os
 
 from llama_index.program.openai import OpenAIPydanticProgram
+from llama_index.core.program import FunctionCallingProgram
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters, FilterOperator
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.embeddings.cohere import CohereEmbedding
@@ -43,7 +44,7 @@ Extract the query parameters from the user's input.
 """
 
 def extract_query_parameters(user_input: str):
-    program = OpenAIPydanticProgram.from_defaults(
+    program = FunctionCallingProgram.from_defaults(
         output_cls=SubsidyReportParameters, 
         prompt_template_str=prompt_template_str, 
         verbose=True
