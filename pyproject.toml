@@ -25,6 +25,7 @@ fastembed = "^0.4.2"
 llama-index-program-openai = "^0.3.1"
 arize-phoenix-otel = "^0.6.1"
 openinference-instrumentation-llama-index = "^3.0.4"
+streamlit = "^1.41.0"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.5"
