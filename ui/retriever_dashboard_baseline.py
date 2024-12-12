@@ -61,7 +61,7 @@ def main():
             with st.spinner('Bezig met zoeken...'):
                 try:
                     # Retrieve results
-                    results = retrieve_subsidies(user_input)
+                    results, nodes_embed = retrieve_subsidies(user_input)
                     
                     # Display results
                     st.subheader(f"🎯 Gevonden resultaten: {len(results)}")
