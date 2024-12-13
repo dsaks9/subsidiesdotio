@@ -17,6 +17,14 @@ from llama_index.core.node_parser import SentenceSplitter
 
 from qdrant_client import QdrantClient
 
+from agent.tools.tool_query_subsidies import CategorieSelectie
+
+# OpenAI API Configuration
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+OpenAI.api_key = OPENAI_API_KEY
+
+client_openai = OpenAI()
+
 
 def load_subsidy_data(file_paths: list[str]) -> list:
     """
@@ -65,13 +73,7 @@ def extract_region(summary: str) -> str:
     class Region(BaseModel):
         region: list[Regions]
 
-    # OpenAI API Configuration
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    OpenAI.api_key = OPENAI_API_KEY
-
-    client = OpenAI()
-
-    completion = client.beta.chat.completions.parse(
+    completion = client_openai.beta.chat.completions.parse(
     model="gpt-4o",
     messages=[
         {"role": "system", "content": "Haal de regio uit de samenvatting."},
@@ -85,6 +87,24 @@ def extract_region(summary: str) -> str:
     region = [region.value for region in region.region]
 
     return region
+
+def extract_category(summary: str) -> str:
+    """
+    Extract the category from the summary of a subsidy.
+    """
+
+    completion = client_openai.beta.chat.completions.parse(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "Haal de regio uit de samenvatting."},
+        {"role": "user", "content": summary},
+    ],
+    response_format=CategorieSelectie,
+    )
+
+    categories = completion.choices[0].message.parsed
+
+    return categories
 
 def create_documents_from_subsidies(subsidies: list) -> list[Document]:
     """
@@ -106,6 +126,8 @@ def create_documents_from_subsidies(subsidies: list) -> list[Document]:
             bereik = subsidy.get('Bereik', '')
             if bereik == 'Regional':
                 bereik = extract_region(subsidy.get('Samenvatting', ''))
+            else:
+                bereik = ["National"]
 
             document = Document(
                 text=subsidy.get('Samenvatting', ''),
@@ -243,13 +265,13 @@ def main():
     
     # Define the paths to your JSON files
     json_paths = [
-        Path("../../data/parse_results/parse_subsidy_text_results_national_20_40_cleaned.json"),
-        Path("../../data/parse_results/parse_subsidy_text_results_national_40_60_cleaned.json"),
-        Path("../../data/parse_results/parse_subsidy_text_results_national_60_74_cleaned.json"),
-        Path("../../data/parse_results/parse_subsidy_text_results_regional_1_19_cleaned.json"),
-        Path("../../data/parse_results/parse_subsidy_text_results_regional_38_52_cleaned.json"),
-        Path("../../data/parse_results/parse_subsidy_text_results_regional_38_52_cleaned.json"),
-        Path("../../data/parse_results/parse_subsidy_text_results_regional_53_65_cleaned.json"),
+        Path("../data/parse_results/parse_subsidy_text_results_national_20_40_cleaned.json"),
+        Path("../data/parse_results/parse_subsidy_text_results_national_40_60_cleaned.json"),
+        Path("../data/parse_results/parse_subsidy_text_results_national_60_74_cleaned.json"),
+        Path("../data/parse_results/parse_subsidy_text_results_regional_1_19_cleaned.json"),
+        Path("../data/parse_results/parse_subsidy_text_results_regional_38_52_cleaned.json"),
+        Path("../data/parse_results/parse_subsidy_text_results_regional_38_52_cleaned.json"),
+        Path("../data/parse_results/parse_subsidy_text_results_regional_53_65_cleaned.json"),
     ]
     
     print(f"Found {len(json_paths)} JSON files to process")

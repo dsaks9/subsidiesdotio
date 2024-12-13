@@ -3478,6 +3478,29 @@ instruments = ["llama-index-core (>=0.11.0)", "llama-index-multi-modal-llms-open
 test = ["llama-index (==0.11.0)", "llama-index-core (>=0.11.0)", "llama-index-llms-openai", "llama-index-multi-modal-llms-openai (>=0.1.7)", "openinference-instrumentation-openai", "opentelemetry-sdk", "respx"]
 
 [[package]]
+name = "openinference-instrumentation-openai"
+version = "0.1.18"
+description = "OpenInference OpenAI Instrumentation"
+optional = false
+python-versions = "<3.13,>=3.8"
+files = [
+    {file = "openinference_instrumentation_openai-0.1.18-py3-none-any.whl", hash = "sha256:d34c4047211d375105016e706390a178609252aecddf52544425dd017ad8bb67"},
+    {file = "openinference_instrumentation_openai-0.1.18.tar.gz", hash = "sha256:a0b539056338cd020064a5391d6a9d9792a9e752ceab167fee00c6d2758508a0"},
+]
+
+[package.dependencies]
+openinference-instrumentation = ">=0.1.18"
+openinference-semantic-conventions = ">=0.1.12"
+opentelemetry-api = "*"
+opentelemetry-instrumentation = "*"
+opentelemetry-semantic-conventions = "*"
+typing-extensions = "*"
+wrapt = "*"
+
+[package.extras]
+instruments = ["openai (>=1.0.0)"]
+
+[[package]]
 name = "openinference-semantic-conventions"
 version = "0.1.12"
 description = "OpenInference Semantic Conventions"
@@ -6129,4 +6152,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.12,<3.13"
-content-hash = "9035088e98a90cd6b64743bf8a2f08b8ba22e52eb554433cf846bdfad08c4b5f"
+content-hash = "e7df58feeb8815c453956c03f62fd3d6d721a8ff341f16c402289c95867d7596"

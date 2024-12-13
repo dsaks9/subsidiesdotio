@@ -1,3 +1,5 @@
+from enum import Enum
+
 REGIONS = [
     "Drenthe",
     "Flevoland",
@@ -18,6 +20,25 @@ STATUS = [
     "Aangekondigd",
     "Gesloten"
 ]
+
+class RegionEnum(str, Enum):
+    DRENTHE = "Drenthe"
+    FLEVOLAND = "Flevoland"
+    FRIESLAND = "Friesland"
+    GELDERLAND = "Gelderland"
+    GRONINGEN = "Groningen"
+    LIMBURG = "Limburg"
+    NOORD_BRABANT = "Noord-Brabant"
+    NOORD_HOLLAND = "Noord-Holland"
+    OVERIJSSEL = "Overijssel"
+    UTRECHT = "Utrecht"
+    ZEELAND = "Zeeland"
+    ZUID_HOLLAND = "Zuid-Holland"
+
+class StatusEnum(str, Enum):
+    OPEN = "Open"
+    AANGEKONDIGD = "Aangekondigd"
+    GESLOTEN = "Gesloten"
 
 PARAMETER_DESCRIPTION_INCLUDE_NATIONAL = """
 If the user wants to include national level reports, set this parameter to True, otherwise set it to False. The default value for include_national is True.
