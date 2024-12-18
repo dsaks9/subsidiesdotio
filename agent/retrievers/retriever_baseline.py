@@ -12,7 +12,8 @@ from llama_index.core.schema import NodeWithScore
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Filter, FieldCondition, MatchValue, MatchAny
 
-from agent.prompts.prompts import SYSTEM_PROMPT_SUMMARY_EXTRACTOR
+from agent.prompts.prompts import SYSTEM_PROMPT_NATIONAL_REGION_STATUS_EXTRACTOR
+from agent.tools.subsidy_report_parameters import REGIONS, STATUS
 
 from agent.tools.tool_query_subsidies import query_subsidies, SubsidyReportParameters, CategorieSelectie
 from agent.tools.utils import check_regions
@@ -151,7 +152,7 @@ def extract_parameters(user_input: str) -> str:
     Extract the category from the summary of a subsidy.
     """
 
-    summary_extraction_system_prompt = SYSTEM_PROMPT_SUMMARY_EXTRACTOR
+    summary_extraction_system_prompt = SYSTEM_PROMPT_NATIONAL_REGION_STATUS_EXTRACTOR
 
     completion = client_openai.beta.chat.completions.parse(
     model="gpt-4o",
@@ -179,75 +180,246 @@ def extract_parameters(user_input: str) -> str:
     return include_national, regions, status
 
 
-def retrieve_subsidies(user_input):
-    include_national, regions, status = extract_parameters(user_input)
+# def retrieve_subsidies(user_input):
+#     include_national, regions, status = extract_parameters(user_input)
 
-    filter_conditions = []
+#     filter_conditions = []
 
-    query_locations = []
-    if include_national:
-        query_locations.append('National')
-    if regions:
-        query_locations.extend(regions)
+#     query_locations = []
+#     if include_national:
+#         query_locations.append('National')
+#     if regions:
+#         query_locations.extend(regions)
 
-    if query_locations:
-        filter_conditions.append(
-            FieldCondition(
-                key="Bereik",
-                match=MatchAny(any=query_locations),
-            )
-        )
+#     if query_locations:
+#         filter_conditions.append(
+#             FieldCondition(
+#                 key="Bereik",
+#                 match=MatchAny(any=query_locations),
+#             )
+#         )
 
-    if status:
-        filter_conditions.append(
-            FieldCondition(
-                key="Status",
-                match=MatchAny(any=status),
-            )
-        )
+#     if status:
+#         filter_conditions.append(
+#             FieldCondition(
+#                 key="Status",
+#                 match=MatchAny(any=status),
+#             )
+#         )
 
-    # Combine all conditions into a single Filter
-    combined_filter = Filter(
-        must=filter_conditions
-    ) if filter_conditions else None
+#     # Combine all conditions into a single Filter
+#     combined_filter = Filter(
+#         must=filter_conditions
+#     ) if filter_conditions else None
 
-    print(f'combined_filter: {combined_filter}')
+#     print(f'combined_filter: {combined_filter}')
 
-    # embed model
-    embed_model = CohereEmbedding(
-        api_key=cohere_api_key,
-        model_name="embed-english-v3.0",
-        input_type="search_query",
-    )
-    Settings.embed_model = embed_model
+#     # embed model
+#     embed_model = CohereEmbedding(
+#         api_key=cohere_api_key,
+#         model_name="embed-english-v3.0",
+#         input_type="search_query",
+#     )
+#     Settings.embed_model = embed_model
 
-    postprocessor = CohereRerank(
-        top_n=5,
-        model="rerank-v3.5",
-        api_key=cohere_api_key,
-    )
+#     postprocessor = CohereRerank(
+#         top_n=5,
+#         model="rerank-v3.5",
+#         api_key=cohere_api_key,
+#     )
 
-    client = QdrantClient(url="https://afe80cce-90ed-4adc-9aa5-f830cf036737.eu-west-1-0.aws.cloud.qdrant.io:6333",
-                          api_key=qdrant_api_key,
-                          timeout=3600)
+#     client = QdrantClient(url="https://afe80cce-90ed-4adc-9aa5-f830cf036737.eu-west-1-0.aws.cloud.qdrant.io:6333",
+#                           api_key=qdrant_api_key,
+#                           timeout=3600)
     
-    query_collection_name = "vindsub_subsidies_2024_v1"
-    vector_store = QdrantVectorStore(
-                query_collection_name, 
-                client=client, 
-                enable_hybrid=True)
+#     query_collection_name = "vindsub_subsidies_2024_v1"
+#     vector_store = QdrantVectorStore(
+#                 query_collection_name, 
+#                 client=client, 
+#                 enable_hybrid=True)
 
-    index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
+#     index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
 
-    if combined_filter:
-        retriever = index.as_retriever(similarity_top_k=100, vector_store_kwargs={"qdrant_filters": combined_filter})
-    else:
-        retriever = index.as_retriever(similarity_top_k=100)
+#     if combined_filter:
+#         retriever = index.as_retriever(similarity_top_k=100, vector_store_kwargs={"qdrant_filters": combined_filter})
+#     else:
+#         retriever = index.as_retriever(similarity_top_k=100)
 
-    nodes_embed = retriever.retrieve(user_input)
-    nodes_reranked = postprocessor.postprocess_nodes(nodes=nodes_embed, query_str=user_input)
+#     nodes_embed = retriever.retrieve(user_input)
+#     nodes_reranked = postprocessor.postprocess_nodes(nodes=nodes_embed, query_str=user_input)
 
-    return nodes_reranked, nodes_embed
+#     return nodes_reranked, nodes_embed
+
+def retrieve_subsidies(
+    query: str, 
+    include_national: bool = True, 
+    regions: List[str] = None, 
+    categories: dict = None,
+    status: List[str] = None
+):
+    """
+    Retrieve subsidies based on query and filters
+    """
+    try:
+        # Convert the categories dict to CategorieSelectie model
+        category_filters = CategorieSelectie(**categories) if categories else None
+        
+        filter_conditions = []
+
+        query_locations = []
+        if include_national:
+            query_locations.append('National')
+        if regions:
+            query_locations.extend(regions)
+
+        if query_locations:
+            filter_conditions.append(
+                FieldCondition(
+                    key="Bereik",
+                    match=MatchAny(any=query_locations),
+                )
+            )
+
+        if status:
+            filter_conditions.append(
+                FieldCondition(
+                    key="Status",
+                    match=MatchAny(any=status),
+                )
+            )
+
+        if category_filters:
+            category_conditions = []
+            
+            # Process each main category
+            for main_category, subcategories in category_filters.__dict__.items():
+                if isinstance(subcategories, dict):  # Only process if it's a dictionary
+                    # Check if the main category itself is selected (all subcategories should match)
+                    if any(isinstance(v, bool) and v for v in subcategories.values()):
+                        # Create conditions for all possible subcategories under this main category
+                        subcategory_conditions = []
+                        for sub_key, sub_value in subcategories.items():
+                            if isinstance(sub_value, dict):
+                                # Handle nested subcategories (e.g., uitstroom_verbetering)
+                                for nested_key, _ in sub_value.items():
+                                    subcategory_conditions.append(
+                                        FieldCondition(
+                                            key=f"categories.{main_category}.{sub_key}.{nested_key}",
+                                            match=MatchValue(value=True)
+                                        )
+                                    )
+                            else:
+                                subcategory_conditions.append(
+                                    FieldCondition(
+                                        key=f"categories.{main_category}.{sub_key}",
+                                        match=MatchValue(value=True)
+                                    )
+                                )
+                        # Add an OR condition for any subcategory
+                        if subcategory_conditions:
+                            category_conditions.append(
+                                Filter(
+                                    should=subcategory_conditions,
+                                    min_should_match=1  # Match at least one subcategory
+                                )
+                            )
+                    else:
+                        # Process specific selected subcategories
+                        for sub_key, sub_value in subcategories.items():
+                            if isinstance(sub_value, dict):
+                                # Handle nested subcategories (e.g., uitstroom_verbetering)
+                                for nested_key, nested_value in sub_value.items():
+                                    if nested_value:  # Only add if True
+                                        category_conditions.append(
+                                            FieldCondition(
+                                                key=f"categories.{main_category}.{sub_key}.{nested_key}",
+                                                match=MatchValue(value=True)
+                                            )
+                                        )
+                            elif sub_value:  # Only add if True
+                                category_conditions.append(
+                                    FieldCondition(
+                                        key=f"categories.{main_category}.{sub_key}",
+                                        match=MatchValue(value=True)
+                                    )
+                                )
+            
+            # Add category conditions with OR logic if any exist
+            if category_conditions:
+                filter_conditions.append(
+                    Filter(
+                        should=category_conditions
+                    )
+                )
+
+        # Add location filter
+        query_locations = []
+        if include_national:
+            query_locations.append('National')
+        if regions:
+            query_locations.extend(regions)
+
+        if query_locations:
+            filter_conditions.append(
+                FieldCondition(
+                    key="Bereik",
+                    match=MatchAny(any=query_locations)
+                )
+            )
+
+        if status:
+            filter_conditions.append(
+                FieldCondition(
+                    key="Status",
+                    match=MatchAny(any=status)
+                )
+            )
+
+        # Combine all conditions into a single Filter with AND logic
+        combined_filter = Filter(
+            must=filter_conditions
+        ) if filter_conditions else None
+
+        print(f'combined_filter: {combined_filter}')
+
+        # embed model
+        embed_model = CohereEmbedding(
+            api_key=cohere_api_key,
+            model_name="embed-english-v3.0",
+            input_type="search_query",
+        )
+        Settings.embed_model = embed_model
+
+        postprocessor = CohereRerank(
+            top_n=5,
+            model="rerank-v3.5",
+            api_key=cohere_api_key,
+        )
+
+        client = QdrantClient(url="https://afe80cce-90ed-4adc-9aa5-f830cf036737.eu-west-1-0.aws.cloud.qdrant.io:6333",
+                            api_key=qdrant_api_key,
+                            timeout=3600)
+        
+        query_collection_name = "vindsub_subsidies_2024_v1"
+        vector_store = QdrantVectorStore(
+                    query_collection_name, 
+                    client=client, 
+                    enable_hybrid=True)
+
+        index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
+
+        if combined_filter:
+            retriever = index.as_retriever(similarity_top_k=100, vector_store_kwargs={"qdrant_filters": combined_filter})
+        else:
+            retriever = index.as_retriever(similarity_top_k=100)
+
+        nodes_embed = retriever.retrieve(user_input)
+        nodes_reranked = postprocessor.postprocess_nodes(nodes=nodes_embed, query_str=user_input)
+
+        return nodes_reranked, nodes_embed
+        
+    except Exception as e:
+        raise Exception(f"Error in retrieve_subsidies: {str(e)}")
 
 def check_nodes_for_subsidy(subsidy_titles: List[str], nodes: List[NodeWithScore]):
     matching_nodes = []
@@ -259,8 +431,8 @@ def check_nodes_for_subsidy(subsidy_titles: List[str], nodes: List[NodeWithScore
 if __name__ == "__main__":
 
     user_input = """
-    Include national level subsidies. Only include Gesloten statis. This is for Noord-Brabant. In the hot milling steel industry there is a strong need for a measurement device that can determine whether the steel plates leaving het milling machine are according specs. As the sheets are leaving the machine under tension and high temperatures, standard thickness measurements is not sufficient to determine whether the plates are produced correctly, as when the pressure releases and the prodcut has cooled down, it might happen some unwanted wrinkles defects will appear again in the product, making the plates nog useful anymore for commercial use. Today it can take up to tens of minutes before any defect can be detected and the machine is adjusted accordingly. In the meantime, as the output speed of the material is several meters per second, a lot of metal needs to be scrapped/reproduced as a result of the delay. Whitin this development project we are going to develop and build a proof of concept of the worlds first flatness in line measuring roll based on interferometric fiber optic measurement technology. This measurement roll will be able to work in the ambient conditions given I hot strip rolling facilities, working at temperatures of up to 600C. The measurement roll will be placed richt after the machine and finally will be used to provide input to the pressing process inside the milling machine (controlled loop system). The main critical steps in the project consist of the development of the high temperature fiber optic sensors, the fiber network inside the role, the measurement roll itself including the rotating fiber output, the development of the optical readout to this application and the design of the algorithm that converse measurement output to input the hot milling machine controls. The final goal is the development of a new inline flatness measuring roll for hot rolling for the European metal industry, and to transfer the technology into a worldwide available product. Witt this approach, the decade-long existing hurdle to measure the shape of metal strips in the hot rolling process can be overcome and provides this essential quality measure in the very first step of production of sheet metal, allowing for immediate control and correction actions and thus improved yield and less scrap material.
-    """
+Veel communicatie gebeurt via beeld en schrift. Denk aan TV, computer, tablets, smartphones, maar ook via informatieborden op rijkswegen en in openbare gebouwen. Helaas zijn grote groepen mensen beperkt in het begrijpen van deze vormen van communicatie. Blinden en slechtzienden, ouderen, dementerenden maar ook analfabeten en mensen afkomstig uit andere landen kunnen vaak niet uit de voeten met geschreven tekst..Doel van dit project is het ontwikkelen van “drukwerk” met geprinte geluidsmodules voor mensen met lichamelijke beperkingen zoals slechtziendheid, blindheid of niet aangeboren hersenletsel en voor mensen met geestelijke beperkingen op het gebied van kijken of begrijpend lezen. Toepassing van de geprinte geluidsmodules zijn voorzien voor het gebruik van farmaceutische producten en in producten en diensten voor de zorg als ondersteuning van bijsluiters, gebruiksaanwijzingen of als alarmering voor medicatie. De ontwikkelde technologie kan, geprint op een kaart, als zelfstandig communicatiemiddel worden ingezet, gecombineerd worden met computers, terminals, smartphones, tablets etc. maar kan ook geïntegreerd worden toegepast in verpakkingen. Binnen het project is de ontwikkeling voorzien van:.- Gesproken geheugen.- of medicijninnamekaart voor verschillende doelgroepen..- Gesproken medicijnkaart/bijsluiter voor blinden en slechtzienden, eventueel geïntegreerd in de verpakking..- Gesproken “spraakkaart” voor analfabeten (dit kan een bijsluiter voor medicijnen zijn maar ook een gesproken routebeschrijving voor openbare gebouwen of ziekenhuizen)..- Gesproken geheugen ondersteuning voor mensen met Dementie..- Gesproken Stimulans kaart voor mensen met dementie (kan ook in combinatie met een beeldschermpje via software matig gekoppelde apparaten).
+"""
 
     if not user_input:
         user_input = input("Please enter your subsidy query: ")
@@ -268,7 +440,8 @@ if __name__ == "__main__":
     nodes_reranked, nodes_embed = retrieve_subsidies(user_input)
 
     subsidy_titles = [
-        "Versnelde klimaatinvesteringen in de industrie - Regeling nationale EZK- en LNV-subsidies -",
+        "Mkb Innovatiestimulering Topsectoren (TKI mkb-versterking en Mkb Innovatiestimulering Topsectoren - MIT) - Regeling nationale EZK- en LNV-subsidies -",
+        "Wet vermindering afdracht loonbelasting en premie voor de volksverzekeringen"
     ]
 
     if not subsidy_titles:

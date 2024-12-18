@@ -19,6 +19,8 @@ from qdrant_client import QdrantClient
 
 from agent.tools.tool_query_subsidies import CategorieSelectie
 
+from agent.prompts.prompts import SYSTEM_PROMPT_CATEGORY_EXTRACTOR
+
 # OpenAI API Configuration
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 OpenAI.api_key = OPENAI_API_KEY
@@ -88,15 +90,16 @@ def extract_region(summary: str) -> str:
 
     return region
 
-def extract_category(summary: str) -> str:
+def extract_category(summary: str) -> dict:
     """
     Extract the category from the summary of a subsidy.
     """
 
+    system_prompt = SYSTEM_PROMPT_CATEGORY_EXTRACTOR
     completion = client_openai.beta.chat.completions.parse(
     model="gpt-4o",
     messages=[
-        {"role": "system", "content": "Haal de regio uit de samenvatting."},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": summary},
     ],
     response_format=CategorieSelectie,
@@ -104,18 +107,72 @@ def extract_category(summary: str) -> str:
 
     categories = completion.choices[0].message.parsed
 
+    categories = categories.model_dump()
+
     return categories
 
-def create_documents_from_subsidies(subsidies: list) -> list[Document]:
+def convert_none_to_false(d):
+    """Recursively convert None values to False in a dictionary"""
+    if isinstance(d, dict):
+        return {k: convert_none_to_false(v) if isinstance(v, dict) else False if v is None else v 
+               for k, v in d.items()}
+    return d
+
+def fill_missing_categories(output_dict, schema, original_schema=None):
     """
-    Create llama_index Documents from subsidy data.
+    Recursively fill in missing categories and subcategories with False based on the Pydantic schema.
     
     Args:
-        subsidies (list): List of subsidy dictionaries
-        
+        output_dict (dict): The current dictionary with some values filled in
+        schema (dict): The current level schema
+        original_schema (dict): The complete original schema with $defs (used for recursion)
+    
     Returns:
-        list[Document]: List of llama_index Documents
+        dict: A complete dictionary with all categories and subcategories filled in
     """
+    result = {}
+    
+    # On first call, set original_schema
+    if original_schema is None:
+        original_schema = schema
+    
+    # Get the properties from the schema
+    properties = schema.get('properties', {})
+    
+    # Go through each property in the schema
+    for prop_name, prop_schema in properties.items():
+        current_value = output_dict.get(prop_name)
+        
+        # Handle anyOf cases
+        if 'anyOf' in prop_schema:
+            # Check if it's a reference to another schema
+            ref_schema = next((t.get('$ref') for t in prop_schema['anyOf'] if '$ref' in t), None)
+            
+            if ref_schema:
+                # Get the referenced schema name
+                ref_name = ref_schema.split('/')[-1]
+                # Get the full referenced schema
+                full_ref_schema = original_schema['$defs'][ref_name]
+                
+                # Recursively fill in the nested object
+                if isinstance(current_value, dict):
+                    result[prop_name] = fill_missing_categories(current_value, full_ref_schema, original_schema)
+                elif current_value is False or current_value is None:
+                    # If the current value is False or None, create a new dict with all False values
+                    result[prop_name] = fill_missing_categories({}, full_ref_schema, original_schema)
+                else:
+                    result[prop_name] = current_value
+            else:
+                # If it's a simple boolean/null property
+                result[prop_name] = False if current_value is None else current_value
+        else:
+            # For any other case, keep the existing value or set to False
+            result[prop_name] = False if current_value is None else current_value
+            
+    return result
+
+def create_documents_from_subsidies(subsidies: list) -> list[Document]:
+    """Create llama_index Documents from subsidy data."""
     print(f"\nAttempting to create documents from {len(subsidies)} subsidies")
     documents = []
     for i, subsidy in enumerate(subsidies):
@@ -129,23 +186,34 @@ def create_documents_from_subsidies(subsidies: list) -> list[Document]:
             else:
                 bereik = ["National"]
 
+            # Extract categories and convert None to False
+            categories = extract_category(subsidy.get('Samenvatting', ''))
+            categories_converted = convert_none_to_false(categories)
+
+            schema = CategorieSelectie.model_json_schema()
+            categories_filled = fill_missing_categories(categories_converted, schema)
+
+            # Create metadata dictionary with all fields including categories
+            metadata = {
+                'title': subsidy.get('title', ''),
+                'Afkorting': subsidy.get('Afkorting', ''),
+                'Laatste wijziging': subsidy.get('Laatste wijziging', ''),
+                "Status": subsidy.get('Status', ''),
+                "Deadline": subsidy.get('Deadline', ''),
+                "Minimale bijdrage": subsidy.get('Minimale bijdrage', ''),
+                "Maximale bijdrage": subsidy.get('Maximale bijdrage', ''),
+                "Budget": subsidy.get('Budget', ''),
+                "Aanvraagtermijn": subsidy.get('Aanvraagtermijn', ''),
+                "Bereik": bereik,
+                "Indienprocedure": subsidy.get('Indienprocedure', ''),
+                "Categories": categories_filled,  # Add the categories to metadata
+            }
+
             document = Document(
                 text=subsidy.get('Samenvatting', ''),
-                metadata={
-                    'title': subsidy.get('title', ''),
-                    'Afkorting': subsidy.get('Afkorting', ''),
-                    'Laatste wijziging': subsidy.get('Laatste wijziging', ''),
-                    "Status": subsidy.get('Status', ''),
-                    "Deadline": subsidy.get('Deadline', ''),
-                    "Minimale bijdrage": subsidy.get('Minimale bijdrage', ''),
-                    "Maximale bijdrage": subsidy.get('Maximale bijdrage', ''),
-                    "Budget": subsidy.get('Budget', ''),
-                    "Aanvraagtermijn": subsidy.get('Aanvraagtermijn', ''),
-                    "Bereik": bereik,
-                    "Indienprocedure": subsidy.get('Indienprocedure', ''),
-                },
-                excluded_llm_metadata_keys=['title', 'Afkorting', 'Laatste wijziging', 'Status', 'Deadline', 'Minimale bijdrage', 'Maximale bijdrage', 'Budget', 'Aanvraagtermijn', 'Bereik', 'Indienprocedure'],
-                excluded_embed_metadata_keys=['title', 'Afkorting', 'Laatste wijziging', 'Status', 'Deadline', 'Minimale bijdrage', 'Maximale bijdrage', 'Budget', 'Aanvraagtermijn', 'Bereik', 'Indienprocedure'],
+                metadata=metadata,
+                excluded_llm_metadata_keys=list(metadata.keys()),  # Exclude all metadata keys
+                excluded_embed_metadata_keys=list(metadata.keys()),  # Exclude all metadata keys
                 metadata_seperator="\n",
                 metadata_template="{key} = {value}",
                 text_template=f"Samenvatting: " + "{content}",
@@ -154,7 +222,14 @@ def create_documents_from_subsidies(subsidies: list) -> list[Document]:
 
             print(f"\nSuccessfully created {len(documents)} documents")
         except Exception as e:
-            print(f"Error creating document: {str(e)}")
+            print("\n" + "="*50)
+            print("ERROR CREATING DOCUMENT")
+            print(f"Error type: {type(e).__name__}")
+            print(f"Error message: {str(e)}")
+            print("\nFull traceback:")
+            import traceback
+            print(''.join(traceback.format_tb(e.__traceback__)))
+            print("="*50 + "\n")
     return documents
 
 def embed_documents(documents: list[Document], query_collection_name: str) -> None:
@@ -190,9 +265,10 @@ def embed_documents(documents: list[Document], query_collection_name: str) -> No
 
     # Settings for LlamaIndex
     chunk_size = 512
+    chunk_overlap = 20
     Settings.chunk_size = chunk_size
-    Settings.chunk_overlap = 20
-    Settings.text_splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=20)
+    Settings.chunk_overlap = chunk_overlap
+    Settings.text_splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
     # Add batch processing
     batch_size = 50  # Adjust this number based on your needs
@@ -217,7 +293,7 @@ def embed_documents(documents: list[Document], query_collection_name: str) -> No
                 index = VectorStoreIndex.from_documents(
                     batch,
                     storage_context=storage_context,
-                    transformations=[SentenceSplitter(chunk_size=chunk_size, chunk_overlap=20)]
+                    transformations=[SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)]
                 )
                 
                 print(f"Successfully processed batch {i//batch_size + 1}")
@@ -265,13 +341,13 @@ def main():
     
     # Define the paths to your JSON files
     json_paths = [
-        Path("../data/parse_results/parse_subsidy_text_results_national_20_40_cleaned.json"),
-        Path("../data/parse_results/parse_subsidy_text_results_national_40_60_cleaned.json"),
-        Path("../data/parse_results/parse_subsidy_text_results_national_60_74_cleaned.json"),
-        Path("../data/parse_results/parse_subsidy_text_results_regional_1_19_cleaned.json"),
-        Path("../data/parse_results/parse_subsidy_text_results_regional_38_52_cleaned.json"),
-        Path("../data/parse_results/parse_subsidy_text_results_regional_38_52_cleaned.json"),
-        Path("../data/parse_results/parse_subsidy_text_results_regional_53_65_cleaned.json"),
+        Path("/Users/delonsaks/Documents/subsidies-dot-io/data/parse_results/parse_subsidy_text_results_national_1_20_cleaned.json"),
+        # Path("../data/parse_results/parse_subsidy_text_results_national_40_60_cleaned.json"),
+        # Path("../data/parse_results/parse_subsidy_text_results_national_60_74_cleaned.json"),
+        # Path("../data/parse_results/parse_subsidy_text_results_regional_1_19_cleaned.json"),
+        # Path("../data/parse_results/parse_subsidy_text_results_regional_38_52_cleaned.json"),
+        # Path("../data/parse_results/parse_subsidy_text_results_regional_38_52_cleaned.json"),
+        # Path("../data/parse_results/parse_subsidy_text_results_regional_53_65_cleaned.json"),
     ]
     
     print(f"Found {len(json_paths)} JSON files to process")
@@ -284,7 +360,7 @@ def main():
         
         # Create Documents from subsidies
         print("\nStarting document creation...")
-        documents = create_documents_from_subsidies(subsidies)
+        documents = create_documents_from_subsidies(subsidies[0:5])
         print(f"Created {len(documents)} Documents")
         
         # Save documents

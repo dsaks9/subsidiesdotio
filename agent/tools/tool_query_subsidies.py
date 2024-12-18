@@ -44,152 +44,6 @@ class SubsidyReportParameters(BaseModel):
         description="Status of the subsidies that the user would like to search for from the list of allowable statuses"
     )
 
-class Innovatie(BaseModel):
-    """Model voor innovatie-gerelateerde subsidiecategorieën"""
-    bedrijfsparticipatie: Optional[bool] = Field(
-        None,
-        description="Subsidies voor innovatieve bedrijfsparticipatie"
-    )
-    procesinnovatie: Optional[bool] = Field(
-        None,
-        description="Subsidies voor innovatie in bedrijfsprocessen"
-    )
-    productinnovatie: Optional[bool] = Field(
-        None,
-        description="Subsidies voor innovatie in productontwikkeling"
-    )
-    software: Optional[bool] = Field(
-        None,
-        description="Subsidies voor innovatieve software-ontwikkeling"
-    )
-    sociale_innovatie: Optional[bool] = Field(
-        None,
-        description="Subsidies voor sociale innovatie"
-    )
-
-    # class Config:
-    #     title = "Innovatie Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "bedrijfsparticipatie": True,
-    #             "procesinnovatie": None,
-    #             "productinnovatie": True,
-    #             "software": False,
-    #             "sociale_innovatie": None
-    #         }]
-    #     }
-
-class Wetenschap(BaseModel):
-    """Model voor wetenschaps-gerelateerde subsidiecategorieën"""
-    formele_wetenschappen: Optional[bool] = Field(
-        None,
-        description="Subsidies voor formele wetenschappen"
-    )
-    fundamenteel_onderzoek: Optional[bool] = Field(
-        None,
-        description="Subsidies voor fundamenteel wetenschappelijk onderzoek"
-    )
-    geesteswetenschappen: Optional[bool] = Field(
-        None,
-        description="Subsidies voor geesteswetenschappen"
-    )
-    geneeskunde: Optional[bool] = Field(
-        None,
-        description="Subsidies voor geneeskundig onderzoek"
-    )
-    natuurwetenschappen: Optional[bool] = Field(
-        None,
-        description="Subsidies voor natuurwetenschappelijk onderzoek"
-    )
-    sociale_wetenschappen: Optional[bool] = Field(
-        None,
-        description="Subsidies voor sociaal-wetenschappelijk onderzoek"
-    )
-    toegepast_onderzoek: Optional[bool] = Field(
-        None,
-        description="Subsidies voor toegepast wetenschappelijk onderzoek"
-    )
-
-    # class Config:
-    #     title = "Wetenschap Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "formele_wetenschappen": True,
-    #             "fundamenteel_onderzoek": None,
-    #             "geesteswetenschappen": False,
-    #             "geneeskunde": True,
-    #             "natuurwetenschappen": None,
-    #             "sociale_wetenschappen": True,
-    #             "toegepast_onderzoek": False
-    #         }]
-    #     }
-
-class Onderwijs(BaseModel):
-    """Model voor onderwijs-gerelateerde subsidiecategorieën"""
-    hoger_onderwijs: Optional[bool] = Field(
-        None,
-        description="Subsidies voor hoger onderwijs en universiteiten"
-    )
-    middelbaar_beroepsonderwijs: Optional[bool] = Field(
-        None,
-        description="Subsidies voor MBO-instellingen"
-    )
-    primair_onderwijs: Optional[bool] = Field(
-        None,
-        description="Subsidies voor basisonderwijs"
-    )
-    voortgezet_onderwijs: Optional[bool] = Field(
-        None,
-        description="Subsidies voor voortgezet onderwijs"
-    )
-
-    # class Config:
-    #     title = "Onderwijs Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "hoger_onderwijs": True,
-    #             "middelbaar_beroepsonderwijs": None,
-    #             "primair_onderwijs": True,
-    #             "voortgezet_onderwijs": False
-    #         }]
-    #     }
-
-class Onderzoek(BaseModel):
-    """Model voor onderzoek-gerelateerde subsidiecategorieën"""
-    innovatie: Optional[Innovatie] = Field(
-        None,
-        description="Innovatie-gerelateerde subsidiecategorieën"
-    )
-    kennisoverdracht: Optional[bool] = Field(
-        None,
-        description="Subsidies voor kennisoverdracht en -verspreiding"
-    )
-    wetenschap: Optional[Wetenschap] = Field(
-        None,
-        description="Wetenschaps-gerelateerde subsidiecategorieën"
-    )
-    overige_regelingen: Optional[bool] = Field(
-        None,
-        description="Overige onderzoeksregelingen"
-    )
-
-    # class Config:
-    #     title = "Onderzoek Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "kennisoverdracht": True,
-    #             "overige_regelingen": None,
-    #             "innovatie": {
-    #                 "bedrijfsparticipatie": True,
-    #                 "procesinnovatie": None,
-    #                 "productinnovatie": True
-    #             },
-    #             "wetenschap": {
-    #                 "fundamenteel_onderzoek": True,
-    #                 "toegepast_onderzoek": False
-    #             }
-    #         }]
-    #     }
 
 
 class UitstroomVerbetering(BaseModel):
@@ -215,18 +69,6 @@ class UitstroomVerbetering(BaseModel):
         description="Subsidies gericht op het vervullen van vacatures"
     )
 
-    # class Config:
-    #     title = "Uitstroom Verbetering Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "werkervaring_evc": True,
-    #             "loopbaanbegeleiding": False,
-    #             "uitstroom_verbetering": True,
-    #             "loonkosten": None,
-    #             "vacaturevervulling": True
-    #         }]
-    #     }
-
 class Arbeidsmarkt(BaseModel):
     """Model voor arbeidsmarkt-gerelateerde subsidiecategorieën"""
     activering_en_instroom: Optional[bool] = Field(
@@ -235,7 +77,7 @@ class Arbeidsmarkt(BaseModel):
     )
     gesubsidieerd_werk: Optional[bool] = Field(
         None,
-        description="Subsidies voor gesubsidieerde arbeidsplaatsen"
+        description="Subsidies voor gesubsidieerde arbeidsplaatsen en sociale werkvoorziening"
     )
     integratie_en_reintegratie: Optional[bool] = Field(
         None,
@@ -258,43 +100,23 @@ class Arbeidsmarkt(BaseModel):
         description="Subsidies voor stages en werkleertrajecten"
     )
 
-    # class Config:
-    #     title = "Arbeidsmarkt Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "activering_en_instroom": True,
-    #             "gesubsidieerd_werk": None,
-    #             "integratie_en_reintegratie": True,
-    #             "leeftijdsbewust_beleid": False,
-    #             "werknemersopleiding": True,
-    #             "stages_werkleertrajecten": None,
-    #             "uitstroom_verbetering": {
-    #                 "werkervaring_evc": True,
-    #                 "loopbaanbegeleiding": None,
-    #                 "uitstroom_verbetering": True,
-    #                 "loonkosten": False,
-    #                 "vacaturevervulling": True
-    #             }
-    #         }]
-    #     }
-
 class Bouw(BaseModel):
     """Model voor bouw-gerelateerde subsidiecategorieën"""
     afwerking: Optional[bool] = Field(
         None,
-        description="Subsidies voor afwerkingswerkzaamheden in de bouw"
+        description="Subsidies voor afwerkingswerkzaamheden in de bouw (zoals schilders en stukadoors)"
     )
     burgerlijke_utiliteitsbouw: Optional[bool] = Field(
         None,
-        description="Subsidies voor utiliteitsbouw projecten"
+        description="Subsidies voor utiliteitsbouw projecten (bouw van woningen, kantoren en dergelijke)"
     )
-    civiele_techniek: Optional[bool] = Field(
+    grond_weg_waterbouw: Optional[bool] = Field(
         None,
-        description="Subsidies voor civiele techniek projecten"
+        description="Subsidies voor grond-, weg- en waterbouw (GWW)"
     )
     installatietechniek: Optional[bool] = Field(
         None,
-        description="Subsidies voor installatietechnische werkzaamheden"
+        description="Subsidies voor installatietechnische werkzaamheden (elektrische installaties, verwarming en dergelijke)"
     )
     nieuwbouw: Optional[bool] = Field(
         None,
@@ -304,19 +126,6 @@ class Bouw(BaseModel):
         None,
         description="Subsidies voor renovatieprojecten"
     )
-
-    # class Config:
-    #     title = "Bouw Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "afwerking": True,
-    #             "burgerlijke_utiliteitsbouw": None,
-    #             "civiele_techniek": True,
-    #             "installatietechniek": False,
-    #             "nieuwbouw": True,
-    #             "renovatie": None
-    #         }]
-    #     }
 
 class Cultuur(BaseModel):
     """Model voor cultuur-gerelateerde subsidiecategorieën"""
@@ -339,6 +148,10 @@ class Cultuur(BaseModel):
     cultuureducatie: Optional[bool] = Field(
         None,
         description="Subsidies voor cultuureducatieve projecten"
+    )
+    dans: Optional[bool] = Field(
+        None,
+        description="Subsidies voor dansproducties"
     )
     film: Optional[bool] = Field(
         None,
@@ -373,87 +186,82 @@ class Cultuur(BaseModel):
         description="Subsidies voor theaterproducties"
     )
 
-    # class Config:
-    #     title = "Cultuur Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "amateurkunst": True,
-    #             "archieven": None,
-    #             "architectuur_stedenbouw": False,
-    #             "beeldende_kunst_vormgeving": True,
-    #             "cultuureducatie": None,
-    #             "film": True
-    #         }]
-    #     }
 
 class DuurzameEnergie(BaseModel):
     """Model voor duurzame energie-gerelateerde subsidiecategorieën"""
-    energiebesparing_isolatie: Optional[bool] = Field(
+    bio_energie: Optional[bool] = Field(
         None,
-        description="Subsidies voor energiebesparende maatregelen en isolatie"
+        description="Subsidies voor bio-energie"
     )
-    fossiele_energie: Optional[bool] = Field(
+    geothermische_energie: Optional[bool] = Field(
         None,
-        description="Subsidies gerelateerd aan fossiele energiebronnen"
+        description="Subsidies voor geothermische energie"
     )
-    kernenergie: Optional[bool] = Field(
+    waterenergie: Optional[bool] = Field(
         None,
-        description="Subsidies gerelateerd aan kernenergie"
+        description="Subsidies voor waterenergie"
+    )
+    windenergie: Optional[bool] = Field(
+        None,
+        description="Subsidies voor windenergie"
+    )
+    zonne_energie_fotovoltaische_energie: Optional[bool] = Field(
+        None,
+        description="Subsidies voor zonne-energie en fotovoltaïsche energie"
     )
 
-    # class Config:
-    #     title = "Duurzame Energie Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "energiebesparing_isolatie": True,
-    #             "fossiele_energie": None,
-    #             "kernenergie": False
-    #         }]
-    #     }
 
-class Energie(BaseModel):
-    """Model voor energie-gerelateerde subsidiecategorieën"""
+class EnergieEnDuurzaamheid(BaseModel):
+    """Model voor energie en duurzaamheid-gerelateerde subsidiecategorieën"""
     duurzame_energie: Optional[DuurzameEnergie] = Field(
         None,
         description="Categorieën voor duurzame energie subsidies"
     )
-
-    # class Config:
-    #     title = "Energie Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "duurzame_energie": {
-    #                 "energiebesparing_isolatie": True,
-    #                 "fossiele_energie": False,
-    #                 "kernenergie": None
-    #             }
-    #         }]
-    #     }
-
-class Export(BaseModel):
-    """Model voor export-gerelateerde subsidiecategorieën"""
-    export_internationalisering: Optional[bool] = Field(
+    energiebesparing_isolatie_en_verduurzaming: Optional[bool] = Field(
         None,
-        description="Subsidies voor export en internationalisering van bedrijven"
+        description="Subsidies voor energiebesparing, isolatie en verduurzaming"
+    )
+    fossiele_energie: Optional[bool] = Field(
+        None,
+        description="Subsidies voor fossiele energie (aardolie, aardgas, steenkool en bruinkool)"
+    )
+    kernenergie: Optional[bool] = Field(
+        None,
+        description="Subsidies voor kernenergie"
+    )
+
+
+class ExportEnInternationalisering(BaseModel):
+    """Model voor export en internationalisering-gerelateerde subsidiecategorieën"""
+    export_krediet_verzekering_garantie: Optional[bool] = Field(
+        None,
+        description="Subsidies voor export krediet, verzekering en garantie"
+    )
+    internationalisering: Optional[bool] = Field(
+        None,
+        description="Subsidies voor internationalisering"
+    )
+    promotionele_activiteiten: Optional[bool] = Field(
+        None,
+        description="Subsidies voor promotionele activiteiten"
+    )
+
+
+class ExportInternationaliseringOntwikkelingssamenwerking(BaseModel):
+    """Model voor export, internationalisering en ontwikkelingssamenwerking-gerelateerde subsidiecategorieën"""
+    export_en_internationalisering: Optional[ExportEnInternationalisering] = Field(
+        None,
+        description="Export en internationalisering-gerelateerde subsidiecategorieën"
     )
     ontwikkelingssamenwerking: Optional[bool] = Field(
         None,
         description="Subsidies voor ontwikkelingssamenwerking projecten"
     )
-    stedelijke_partnerschappen: Optional[bool] = Field(
+    stedenbanden_en_uitwisseling: Optional[bool] = Field(
         None,
-        description="Subsidies voor internationale stedelijke samenwerkingsverbanden"
+        description="Subsidies voor stedenbanden en uitwisseling met andere overheden"
     )
 
-    # class Config:
-    #     title = "Export Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "export_internationalisering": True,
-    #             "ontwikkelingssamenwerking": None,
-    #             "stedelijke_partnerschappen": False
-    #         }]
-    #     }
 
 class Gezondheidszorg(BaseModel):
     """Model voor gezondheidszorg-gerelateerde subsidiecategorieën"""
@@ -478,17 +286,6 @@ class Gezondheidszorg(BaseModel):
         description="Subsidies voor zorgvoorzieningen"
     )
 
-    # class Config:
-    #     title = "Gezondheidszorg Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "geestelijke_gezondheidszorg": True,
-    #             "gehandicaptenzorg": None,
-    #             "gezondheidsbescherming": True,
-    #             "gezondheidszorg_ziekenhuizen": False,
-    #             "zorgvoorziening": True
-    #         }]
-    #     }
 
 class Welzijn(BaseModel):
     """Model voor welzijn-gerelateerde subsidiecategorieën"""
@@ -529,22 +326,6 @@ class Welzijn(BaseModel):
         description="Subsidies voor wonen, zorg en domotica"
     )
 
-    # class Config:
-    #     title = "Welzijn Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "armoedebestrijding": True,
-    #             "buurtwerk": None,
-    #             "dierenwelzijn": False,
-    #             "emancipatie": True,
-    #             "gehandicapten": True,
-    #             "integratie_nieuwkomers": None,
-    #             "jeugd_jongeren": True,
-    #             "ouderen": False,
-    #             "wonen_zorg_domotica": None
-    #         }]
-    #     }
-
 class GezondheidszorgWelzijn(BaseModel):
     """Model voor gecombineerde gezondheidszorg en welzijn categorieën"""
     gezondheidszorg: Optional[Gezondheidszorg] = Field(
@@ -556,22 +337,6 @@ class GezondheidszorgWelzijn(BaseModel):
         description="Welzijn-gerelateerde subsidiecategorieën"
     )
 
-    # class Config:
-    #     title = "Gezondheidszorg en Welzijn Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "gezondheidszorg": {
-    #                 "geestelijke_gezondheidszorg": True,
-    #                 "gehandicaptenzorg": None,
-    #                 "gezondheidszorg_ziekenhuizen": False
-    #             },
-    #             "welzijn": {
-    #                 "armoedebestrijding": True,
-    #                 "jeugd_jongeren": True,
-    #                 "ouderen": None
-    #             }
-    #         }]
-    #     }
 
 class ICT(BaseModel):
     """Model voor ICT-gerelateerde subsidiecategorieën"""
@@ -596,17 +361,6 @@ class ICT(BaseModel):
         description="Subsidies voor telecommunicatie projecten"
     )
 
-    # class Config:
-    #     title = "ICT Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "hardware": True,
-    #             "infrastructuur": None,
-    #             "internet_toepassingen": True,
-    #             "software": False,
-    #             "telecommunicatie": None
-    #         }]
-    #     }
 
 class Landbouw(BaseModel):
     """Model voor landbouw-gerelateerde subsidiecategorieën"""
@@ -631,17 +385,6 @@ class Landbouw(BaseModel):
         description="Subsidies voor veehouderij"
     )
 
-    # class Config:
-    #     title = "Landbouw Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "akkerbouw": True,
-    #             "biologische_landbouw": None,
-    #             "bosbouw": False,
-    #             "tuinbouw": True,
-    #             "veehouderij": None
-    #         }]
-    #     }
 
 class Visserij(BaseModel):
     """Model voor visserij-gerelateerde subsidiecategorieën"""
@@ -654,14 +397,6 @@ class Visserij(BaseModel):
         description="Subsidies voor visserij activiteiten"
     )
 
-    # class Config:
-    #     title = "Visserij Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "aquacultuur": True,
-    #             "visserij": None
-    #         }]
-    #     }
 
 class LandbouwVisserij(BaseModel):
     """Model voor gecombineerde landbouw en visserij categorieën"""
@@ -674,106 +409,163 @@ class LandbouwVisserij(BaseModel):
         description="Visserij-gerelateerde subsidiecategorieën"
     )
 
-    # class Config:
-    #     title = "Landbouw en Visserij Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "landbouw": {
-    #                 "akkerbouw": True,
-    #                 "biologische_landbouw": None,
-    #                 "veehouderij": False
-    #             },
-    #             "visserij": {
-    #                 "aquacultuur": True,
-    #                 "visserij": None
-    #             }
-    #         }]
-    #     }
-
+class Levensbeschouwing(BaseModel):
+    """Model voor levensbeschouwing-gerelateerde subsidiecategorieën"""
+    levensbeschouwing: Optional[bool] = Field(
+        None,
+        description="Subsidies voor levensbeschouwelijke activiteiten en organisaties"
+    )
+    
 class Milieu(BaseModel):
     """Model voor milieu-gerelateerde subsidiecategorieën"""
-    afvalverwerking: Optional[bool] = Field(
+    afvalverwijdering_opslag_waterzuivering: Optional[bool] = Field(
         None,
-        description="Subsidies voor afvalverwerking en recycling"
+        description="Subsidies voor afvalverwijdering en -opslag, waterzuivering"
     )
-    milieueducatie: Optional[bool] = Field(
+    milieueducatie_voorlichting: Optional[bool] = Field(
         None,
-        description="Subsidies voor milieueducatie projecten"
+        description="Subsidies voor milieueducatie, voorlichting"
     )
-    vervuilingsreductie: Optional[bool] = Field(
+    vermindering_vervuiling: Optional[bool] = Field(
         None,
-        description="Subsidies voor het verminderen van vervuiling"
+        description="Subsidies voor vermindering vervuiling bodem, geluid, water en lucht"
     )
 
-    # class Config:
-    #     title = "Milieu Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "afvalverwerking": True,
-    #             "milieueducatie": None,
-    #             "vervuilingsreductie": True
-    #         }]
-    #     }
 
 class Natuurbeheer(BaseModel):
     """Model voor natuurbeheer-gerelateerde subsidiecategorieën"""
-    aankoop_inrichting: Optional[bool] = Field(
+    aankoop_en_aanleg: Optional[bool] = Field(
         None,
-        description="Subsidies voor aankoop en inrichting van natuurgebieden"
+        description="Subsidies voor aankoop en aanleg van natuurgebieden"
     )
-    beheer_onderhoud: Optional[bool] = Field(
+    beheer_en_instandhouding: Optional[bool] = Field(
         None,
-        description="Subsidies voor beheer en onderhoud van natuurgebieden"
+        description="Subsidies voor beheer en instandhouding van natuurgebieden"
     )
-    inrichting_functiewijziging: Optional[bool] = Field(
+    inrichting_en_functieverandering: Optional[bool] = Field(
         None,
-        description="Subsidies voor herinrichting en functiewijziging van gebieden"
+        description="Subsidies voor inrichting en functieverandering van gebieden"
     )
-    soortenbescherming: Optional[bool] = Field(
+    soortenbescherming_en_biodiversiteit: Optional[bool] = Field(
         None,
-        description="Subsidies voor bescherming van plant- en diersoorten"
+        description="Subsidies voor soortenbescherming en biodiversiteit"
     )
 
-    # class Config:
-    #     title = "Natuurbeheer Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "aankoop_inrichting": True,
-    #             "beheer_onderhoud": None,
-    #             "inrichting_functiewijziging": True,
-    #             "soortenbescherming": False
-    #         }]
-    #     }
 
 class OndersteunendBedrijfsleven(BaseModel):
     """Model voor bedrijfsleven-ondersteunende subsidiecategorieën"""
-    groot_bedrijf: Optional[bool] = Field(
+    ondersteuning_grote_onderneming: Optional[bool] = Field(
         None,
         description="Subsidies voor grote bedrijven"
     )
-    mkb: Optional[bool] = Field(
+    ondersteuning_mkb: Optional[bool] = Field(
         None,
         description="Subsidies voor midden- en kleinbedrijf"
     )
-    starter: Optional[bool] = Field(
+    ondersteuning_starter: Optional[bool] = Field(
         None,
         description="Subsidies voor startende ondernemers"
     )
-    zelfstandigen: Optional[bool] = Field(
+    ondersteuning_zelfstandige: Optional[bool] = Field(
         None,
         description="Subsidies voor zelfstandigen zonder personeel"
     )
 
-    # class Config:
-    #     title = "Ondersteunend Bedrijfsleven Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "groot_bedrijf": False,
-    #             "mkb": True,
-    #             "starter": True,
-    #             "zelfstandigen": None
-    #         }]
-    #     }
+class Onderwijs(BaseModel):
+    """Model voor onderwijs-gerelateerde subsidiecategorieën"""
+    hoger_en_universitair_onderwijs: Optional[bool] = Field(
+        None,
+        description="Subsidies voor hoger en universitair onderwijs (hbo en universiteit)"
+    )
+    middelbaar_beroepsonderwijs_en_volwasseneneducatie: Optional[bool] = Field(
+        None,
+        description="Subsidies voor middelbaar beroepsonderwijs en volwasseneneducatie (BVE)"
+    )
+    primair_onderwijs: Optional[bool] = Field(
+        None,
+        description="Subsidies voor primair onderwijs"
+    )
+    voortgezet_onderwijs: Optional[bool] = Field(
+        None,
+        description="Subsidies voor voortgezet onderwijs (praktijkonderwijs, vmbo, leerwegondersteunend onderwijs, havo en vwo)"
+    )
+
+class Innovatie(BaseModel):
+    """Model voor innovatie-gerelateerde subsidiecategorieën"""
+    deelname_bedrijfsleven_aan_onderzoek: Optional[bool] = Field(
+        None,
+        description="Subsidies voor deelname bedrijfsleven aan onderzoek"
+    )
+    procesinnovatie: Optional[bool] = Field(
+        None,
+        description="Subsidies voor innovatie in bedrijfsprocessen"
+    )
+    productinnovatie: Optional[bool] = Field(
+        None,
+        description="Subsidies voor innovatie in productontwikkeling"
+    )
+    programmatuur: Optional[bool] = Field(
+        None,
+        description="Subsidies voor innovatieve programmatuur"
+    )
+    sociale_innovatie: Optional[bool] = Field(
+        None,
+        description="Subsidies voor sociale innovatie"
+    )
+
+class Wetenschap(BaseModel):
+    """Model voor wetenschaps-gerelateerde subsidiecategorieën"""
+    formele_wetenschappen: Optional[bool] = Field(
+        None,
+        description="Subsidies voor formele wetenschappen"
+    )
+    fundamenteel_onderzoek: Optional[bool] = Field(
+        None,
+        description="Subsidies voor fundamenteel wetenschappelijk onderzoek"
+    )
+    geesteswetenschappen: Optional[bool] = Field(
+        None,
+        description="Subsidies voor geesteswetenschappen"
+    )
+    geneeskunde: Optional[bool] = Field(
+        None,
+        description="Subsidies voor geneeskundig onderzoek"
+    )
+    natuurwetenschappen: Optional[bool] = Field(
+        None,
+        description="Subsidies voor natuurwetenschappelijk onderzoek"
+    )
+    sociale_wetenschappen: Optional[bool] = Field(
+        None,
+        description="Subsidies voor sociaal-wetenschappelijk onderzoek"
+    )
+    toegepast_onderzoek: Optional[bool] = Field(
+        None,
+        description="Subsidies voor toegepast wetenschappelijk onderzoek"
+    )
+
+class Onderzoek(BaseModel):
+    """Model voor onderzoek-gerelateerde subsidiecategorieën"""
+    innovatie: Optional[Innovatie] = Field(
+        None,
+        description="Innovatie-gerelateerde subsidiecategorieën"
+    )
+    kennisoverdracht: Optional[bool] = Field(
+        None,
+        description="Subsidies voor kennisoverdracht en -verspreiding"
+    )
+    wetenschap: Optional[Wetenschap] = Field(
+        None,
+        description="Wetenschaps-gerelateerde subsidiecategorieën"
+    )
+
+class OverigeRegelingen(BaseModel):
+    """Model voor overige regelingen die niet in andere categorieën passen"""
+    overige_regelingen: Optional[bool] = Field(
+        None,
+        description="Subsidies die niet in andere categorieën passen"
+    )
+
 
 class RegionaleOntwikkeling(BaseModel):
     """Model voor regionale ontwikkeling-gerelateerde subsidiecategorieën"""
@@ -781,30 +573,21 @@ class RegionaleOntwikkeling(BaseModel):
         None,
         description="Subsidies voor ontwikkeling van bedrijventerreinen"
     )
-    plattelandsgebied: Optional[bool] = Field(
+    landelijk_gebied: Optional[bool] = Field(
         None,
-        description="Subsidies voor ontwikkeling van plattelandsgebieden"
+        description="Subsidies voor plattelandsontwikkeling"
     )
     stedelijk_gebied: Optional[bool] = Field(
         None,
-        description="Subsidies voor stedelijke ontwikkeling"
+        description="Subsidies voor stedelijke vernieuwing"
     )
 
-    # class Config:
-    #     title = "Regionale Ontwikkeling Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "bedrijventerreinen": True,
-    #             "plattelandsgebied": None,
-    #             "stedelijk_gebied": True
-    #         }]
-    #     }
 
 class Sport(BaseModel):
     """Model voor sport-gerelateerde subsidiecategorieën"""
-    recreatiesport: Optional[bool] = Field(
+    breedtesport: Optional[bool] = Field(
         None,
-        description="Subsidies voor recreatieve sport"
+        description="Subsidies voor breedtesport"
     )
     gehandicaptensport: Optional[bool] = Field(
         None,
@@ -815,19 +598,10 @@ class Sport(BaseModel):
         description="Subsidies voor topsport"
     )
 
-    # class Config:
-    #     title = "Sport Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "recreatiesport": True,
-    #             "gehandicaptensport": None,
-    #             "topsport": False
-    #         }]
-    #     }
 
 class SportRecreatieToerisme(BaseModel):
     """Model voor sport, recreatie en toerisme-gerelateerde subsidiecategorieën"""
-    recreatie_ontspanning: Optional[bool] = Field(
+    recreatie_en_ontspanning: Optional[bool] = Field(
         None,
         description="Subsidies voor recreatie en ontspanning"
     )
@@ -840,19 +614,6 @@ class SportRecreatieToerisme(BaseModel):
         description="Subsidies voor toerisme"
     )
 
-    # class Config:
-    #     title = "Sport, Recreatie en Toerisme Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "recreatie_ontspanning": True,
-    #             "toerisme": None,
-    #             "sport": {
-    #                 "recreatiesport": True,
-    #                 "gehandicaptensport": None,
-    #                 "topsport": False
-    #             }
-    #         }]
-    #     }
 
 class VervoerMobiliteit(BaseModel):
     """Model voor vervoer en mobiliteit-gerelateerde subsidiecategorieën"""
@@ -868,7 +629,7 @@ class VervoerMobiliteit(BaseModel):
         None,
         description="Subsidies voor spoorwegen"
     )
-    vervoer_brandstofbesparing: Optional[bool] = Field(
+    transport_en_brandstofbesparing: Optional[bool] = Field(
         None,
         description="Subsidies voor brandstofbesparing in transport"
     )
@@ -880,19 +641,6 @@ class VervoerMobiliteit(BaseModel):
         None,
         description="Subsidies voor wegvervoer"
     )
-
-    # class Config:
-    #     title = "Vervoer en Mobiliteit Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "lucht": False,
-    #             "ruimtevaart": None,
-    #             "spoor": True,
-    #             "vervoer_brandstofbesparing": True,
-    #             "water": None,
-    #             "weg": False
-    #         }]
-    #     }
 
 class Veiligheid(BaseModel):
     """Model voor veiligheid-gerelateerde subsidiecategorieën"""
@@ -913,25 +661,11 @@ class Veiligheid(BaseModel):
         description="Subsidies voor waterkeringen en waterveiligheid"
     )
 
-    # class Config:
-    #     title = "Veiligheid Categorieën"
-    #     json_schema_extra = {
-    #         "examples": [{
-    #             "brandweer_rampenbestrijding": True,
-    #             "criminaliteit_veiligheid": None,
-    #             "verkeersveiligheid": True,
-    #             "waterkeringen": False
-    #         }]
-    #     }
 
 class CategorieSelectie(BaseModel):
     """Hoofdmodel voor alle subsidiecategorieën in Nederland. 
     Wordt gebruikt voor het structureren van LLM output bij het categoriseren van subsidies."""
     
-    uitstroom_verbetering: Optional[UitstroomVerbetering] = Field(
-        None,
-        description="Categorieën gerelateerd aan het verbeteren van uitstroom naar werk"
-    )
     arbeidsmarkt: Optional[Arbeidsmarkt] = Field(
         None,
         description="Arbeidsmarkt-gerelateerde subsidiecategorieën"
@@ -944,25 +678,13 @@ class CategorieSelectie(BaseModel):
         None,
         description="Cultuur-gerelateerde subsidiecategorieën"
     )
-    duurzame_energie: Optional[DuurzameEnergie] = Field(
+    energie: Optional[EnergieEnDuurzaamheid] = Field(
         None,
-        description="Duurzame energie-gerelateerde subsidiecategorieën"
+        description="Energie en duurzaamheid-gerelateerde subsidiecategorieën"
     )
-    energie: Optional[Energie] = Field(
+    export_internationalisering_ontwikkelingssamenwerking: Optional[ExportInternationaliseringOntwikkelingssamenwerking] = Field(
         None,
-        description="Energie-gerelateerde subsidiecategorieën"
-    )
-    export: Optional[Export] = Field(
-        None,
-        description="Export-gerelateerde subsidiecategorieën"
-    )
-    gezondheidszorg: Optional[Gezondheidszorg] = Field(
-        None,
-        description="Gezondheidszorg-gerelateerde subsidiecategorieën"
-    )
-    welzijn: Optional[Welzijn] = Field(
-        None,
-        description="Welzijn-gerelateerde subsidiecategorieën"
+        description="Export, internationalisering en ontwikkelingssamenwerking-gerelateerde subsidiecategorieën"
     )
     gezondheidszorg_welzijn: Optional[GezondheidszorgWelzijn] = Field(
         None,
@@ -972,17 +694,13 @@ class CategorieSelectie(BaseModel):
         None,
         description="ICT-gerelateerde subsidiecategorieën"
     )
-    landbouw: Optional[Landbouw] = Field(
-        None,
-        description="Landbouw-gerelateerde subsidiecategorieën"
-    )
-    visserij: Optional[Visserij] = Field(
-        None,
-        description="Visserij-gerelateerde subsidiecategorieën"
-    )
     landbouw_visserij: Optional[LandbouwVisserij] = Field(
         None,
         description="Gecombineerde landbouw en visserij categorieën"
+    )
+    levensbeschouwing: Optional[Levensbeschouwing] = Field(
+        None,
+        description="Levensbeschouwing-gerelateerde subsidiecategorieën"
     )
     milieu: Optional[Milieu] = Field(
         None,
@@ -1000,33 +718,25 @@ class CategorieSelectie(BaseModel):
         None,
         description="Onderwijs-gerelateerde subsidiecategorieën"
     )
-    innovatie: Optional[Innovatie] = Field(
-        None,
-        description="Innovatie-gerelateerde subsidiecategorieën"
-    )
-    wetenschap: Optional[Wetenschap] = Field(
-        None,
-        description="Wetenschaps-gerelateerde subsidiecategorieën"
-    )
     onderzoek: Optional[Onderzoek] = Field(
         None,
         description="Onderzoek-gerelateerde subsidiecategorieën"
+    )
+    overige_regelingen: Optional[OverigeRegelingen] = Field(
+        None,
+        description="Overige regelingen die niet in andere categorieën passen"
     )
     regionale_ontwikkeling: Optional[RegionaleOntwikkeling] = Field(
         None,
         description="Regionale ontwikkeling-gerelateerde subsidiecategorieën"
     )
-    sport: Optional[Sport] = Field(
-        None,
-        description="Sport-gerelateerde subsidiecategorieën"
-    )
     sport_recreatie_toerisme: Optional[SportRecreatieToerisme] = Field(
         None,
         description="Sport, recreatie en toerisme-gerelateerde subsidiecategorieën"
     )
-    vervoer_mobiliteit: Optional[VervoerMobiliteit] = Field(
+    transport_mobiliteit: Optional[VervoerMobiliteit] = Field(
         None,
-        description="Vervoer en mobiliteit-gerelateerde subsidiecategorieën"
+        description="Transport en mobiliteit-gerelateerde subsidiecategorieën"
     )
     veiligheid: Optional[Veiligheid] = Field(
         None,
