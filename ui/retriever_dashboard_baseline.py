@@ -2,7 +2,12 @@ import streamlit as st
 from agent.retrievers.retriever_baseline import retrieve_subsidies
 from agent.tools.subsidy_report_parameters import REGIONS
 from agent.tools.tool_query_subsidies import CategorieSelectie
+import traceback
+import logging
 
+# Set up logging at the top of your file
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 def display_node(node):
     """Helper function to display a single node's information"""
@@ -96,22 +101,23 @@ def main():
             if st.checkbox("Arbeidsmarkt"):
                 st.markdown("##### Arbeidsmarkt subcategorieën")
                 category_filters['arbeidsmarkt'] = {
-                    'activering_en_instroom': st.checkbox("Activering en instroom"),
-                    'gesubsidieerd_werk': st.checkbox("Gesubsidieerd werk"),
-                    'integratie_en_reintegratie': st.checkbox("Integratie en reïntegratie"),
-                    'leeftijdsbewust_beleid': st.checkbox("Leeftijdsbewust beleid"),
-                    'werknemersopleiding': st.checkbox("Werknemersopleiding"),
-                    'stages_werkleertrajecten': st.checkbox("Stages en werkleertrajecten")
+                    'activering_en_instroom': st.checkbox("Activering en instroom", key="arbeidsmarkt_activering"),
+                    'gesubsidieerd_werk': st.checkbox("Gesubsidieerd werk", key="arbeidsmarkt_gesubsidieerd"),
+                    'integratie_en_reintegratie': st.checkbox("Integratie en reïntegratie", key="arbeidsmarkt_integratie"),
+                    'leeftijdsbewust_beleid': st.checkbox("Leeftijdsbewust beleid", key="arbeidsmarkt_leeftijd"),
+                    'werknemersopleiding': st.checkbox("Werknemersopleiding", key="arbeidsmarkt_opleiding"),
+                    'stages_werkleertrajecten': st.checkbox("Stages en werkleertrajecten", key="arbeidsmarkt_stages")
                 }
                 
+                # Uitstroom verbetering subcategory
                 if st.checkbox("Uitstroom verbetering", key="arbeidsmarkt_uitstroom"):
-                    st.markdown("##### Uitstroom verbetering subcategorieën")
+                    st.markdown("###### Uitstroom verbetering subcategorieën")
                     category_filters['arbeidsmarkt']['uitstroom_verbetering'] = {
-                        'werkervaring_evc': st.checkbox("Werkervaring en EVC"),
-                        'loopbaanbegeleiding': st.checkbox("Loopbaanbegeleiding"),
-                        'uitstroom_verbetering': st.checkbox("Algemene uitstroom verbetering"),
-                        'loonkosten': st.checkbox("Loonkosten"),
-                        'vacaturevervulling': st.checkbox("Vacaturevervulling")
+                        'werkervaring_evc': st.checkbox("Werkervaring en EVC", key="uitstroom_werkervaring"),
+                        'loopbaanbegeleiding': st.checkbox("Loopbaanbegeleiding", key="uitstroom_loopbaan"),
+                        'uitstroom_verbetering': st.checkbox("Algemene uitstroom verbetering", key="uitstroom_algemeen"),
+                        'loonkosten': st.checkbox("Loonkosten", key="uitstroom_loonkosten"),
+                        'vacaturevervulling': st.checkbox("Vacaturevervulling", key="uitstroom_vacature")
                     }
 
         with tabs[1]:  # Bouw
@@ -120,7 +126,7 @@ def main():
                 category_filters['bouw'] = {
                     'afwerking': st.checkbox("Afwerking"),
                     'burgerlijke_utiliteitsbouw': st.checkbox("Burgerlijke utiliteitsbouw"),
-                    'civiele_techniek': st.checkbox("Civiele techniek"),
+                    'grond_weg_waterbouw': st.checkbox("Grond-, weg- en waterbouw"),
                     'installatietechniek': st.checkbox("Installatietechniek"),
                     'nieuwbouw': st.checkbox("Nieuwbouw"),
                     'renovatie': st.checkbox("Renovatie")
@@ -135,6 +141,7 @@ def main():
                     'architectuur_stedenbouw': st.checkbox("Architectuur en stedenbouw"),
                     'beeldende_kunst_vormgeving': st.checkbox("Beeldende kunst en vormgeving"),
                     'cultuureducatie': st.checkbox("Cultuureducatie"),
+                    'dans': st.checkbox("Dans"),
                     'film': st.checkbox("Film"),
                     'landschapsarchitectuur': st.checkbox("Landschapsarchitectuur"),
                     'letteren_bibliotheken': st.checkbox("Letteren en bibliotheken"),
@@ -148,63 +155,112 @@ def main():
         with tabs[3]:  # Energie en Duurzaamheid
             if st.checkbox("Energie en Duurzaamheid"):
                 st.markdown("##### Energie en Duurzaamheid subcategorieën")
-                category_filters['duurzame_energie'] = {
-                    'energiebesparing_isolatie': st.checkbox("Energiebesparing en isolatie"),
-                    'fossiele_energie': st.checkbox("Fossiele energie"),
-                    'kernenergie': st.checkbox("Kernenergie")
-                }
+                category_filters['energie_en_duurzaamheid'] = {}
+                
+                # Duurzame energie subcategory
+                if st.checkbox("Duurzame energie", key="energie_duurzaam"):
+                    st.markdown("###### Duurzame energie subcategorieën")
+                    category_filters['energie_en_duurzaamheid']['duurzame_energie'] = {
+                        'bio_energie': st.checkbox("Bio-energie", key="energie_bio"),
+                        'geothermische_energie': st.checkbox("Geothermische energie", key="energie_geo"),
+                        'waterenergie': st.checkbox("Waterenergie", key="energie_water"),
+                        'windenergie': st.checkbox("Windenergie", key="energie_wind"),
+                        'zonne_energie_fotovoltaische_energie': st.checkbox("Zonne-energie en fotovoltaïsche energie", key="energie_zon")
+                    }
+                
+                # Other categories
+                category_filters['energie_en_duurzaamheid'].update({
+                    'energiebesparing_isolatie_en_verduurzaming': st.checkbox("Energiebesparing, isolatie en verduurzaming", key="energie_besparing"),
+                    'fossiele_energie': st.checkbox("Fossiele energie", key="energie_fossiel"),
+                    'kernenergie': st.checkbox("Kernenergie", key="energie_kern")
+                })
 
         with tabs[4]:  # Export, Internationalisering & Ontwikkelingssamenwerking
             if st.checkbox("Export, Internationalisering & Ontwikkelingssamenwerking"):
                 st.markdown("##### Export, Internationalisering & Ontwikkelingssamenwerking subcategorieën")
-                category_filters['export_internationalisering_ontwikkelingssamenwerking'] = {
-                    'export_internationalisering': st.checkbox("Export en internationalisering"),
-                    'ontwikkelingssamenwerking': st.checkbox("Ontwikkelingssamenwerking")
-                }
+                category_filters['export_internationalisering_ontwikkelingssamenwerking'] = {}
+                
+                # Export en internationalisering subcategory
+                if st.checkbox("Export en internationalisering", key="export_int"):
+                    st.markdown("###### Export en internationalisering subcategorieën")
+                    category_filters['export_internationalisering_ontwikkelingssamenwerking']['export_en_internationalisering'] = {
+                        'export_krediet_verzekering_garantie': st.checkbox("Export krediet, verzekering en garantie", key="export_krediet"),
+                        'internationalisering': st.checkbox("Internationalisering", key="export_inter"),
+                        'promotionele_activiteiten': st.checkbox("Promotionele activiteiten", key="export_promo")
+                    }
+                
+                # Other categories
+                category_filters['export_internationalisering_ontwikkelingssamenwerking'].update({
+                    'ontwikkelingssamenwerking': st.checkbox("Ontwikkelingssamenwerking", key="export_ontwikkeling"),
+                    'stedenbanden_en_uitwisseling': st.checkbox("Stedenbanden en uitwisseling", key="export_stedenbanden")
+                })
 
         with tabs[5]:  # Gezondheidszorg & Welzijn
             if st.checkbox("Gezondheidszorg & Welzijn"):
                 st.markdown("##### Gezondheidszorg & Welzijn subcategorieën")
-                category_filters['gezondheidszorg_welzijn'] = {
-                    'gezondheidszorg': st.checkbox("Gezondheidszorg"),
-                    'welzijn': st.checkbox("Welzijn")
-                }
+                category_filters['gezondheidszorg_welzijn'] = {}
+                
+                # Gezondheidszorg main category
+                if st.checkbox("Gezondheidszorg"):
+                    st.markdown("###### Gezondheidszorg subcategorieën")
+                    category_filters['gezondheidszorg_welzijn']['gezondheidszorg'] = {
+                        'geestelijke_gezondheidszorg': st.checkbox("Geestelijke gezondheidszorg", key="gz_ggz"),
+                        'gehandicaptenzorg': st.checkbox("Gehandicaptenzorg", key="gz_gehandicapt"),
+                        'gezondheidsbescherming': st.checkbox("Gezondheidsbescherming", key="gz_bescherming"),
+                        'gezondheidszorg_ziekenhuizen': st.checkbox("Gezondheidszorg ziekenhuizen", key="gz_ziekenhuis"),
+                        'zorgvoorziening': st.checkbox("Zorgvoorziening", key="gz_voorziening")
+                    }
+                
+                # Welzijn main category
+                if st.checkbox("Welzijn"):
+                    st.markdown("###### Welzijn subcategorieën")
+                    category_filters['gezondheidszorg_welzijn']['welzijn'] = {
+                        'armoedebestrijding': st.checkbox("Armoedebestrijding", key="welzijn_armoede"),
+                        'buurtwerk': st.checkbox("Buurtwerk", key="welzijn_buurt"),
+                        'dierenwelzijn': st.checkbox("Dierenwelzijn", key="welzijn_dieren"),
+                        'emancipatie': st.checkbox("Emancipatie", key="welzijn_emancipatie"),
+                        'gehandicapten': st.checkbox("Gehandicapten", key="welzijn_gehandicapt"),
+                        'integratie_nieuwkomers': st.checkbox("Integratie nieuwkomers", key="welzijn_integratie"),
+                        'jeugd_jongeren': st.checkbox("Jeugd en jongeren", key="welzijn_jeugd"),
+                        'ouderen': st.checkbox("Ouderen", key="welzijn_ouderen"),
+                        'wonen_zorg_domotica': st.checkbox("Wonen, zorg en domotica", key="welzijn_wonen")
+                    }
 
         with tabs[6]:  # ICT
             if st.checkbox("ICT"):
                 st.markdown("##### ICT subcategorieën")
                 category_filters['ict'] = {
-                    'hardware': st.checkbox("Hardware"),
-                    'infrastructuur': st.checkbox("Infrastructuur"),
-                    'internet_toepassingen': st.checkbox("Internet toepassingen"),
-                    'software': st.checkbox("Software"),
-                    'telecommunicatie': st.checkbox("Telecommunicatie")
+                    'hardware': st.checkbox("Hardware", key="ict_hardware"),
+                    'infrastructuur': st.checkbox("Infrastructuur", key="ict_infra"),
+                    'internet_toepassingen': st.checkbox("Internet toepassingen", key="ict_internet"),
+                    'software': st.checkbox("Software", key="ict_software"),
+                    'telecommunicatie': st.checkbox("Telecommunicatie", key="ict_telecom")
                 }
 
         with tabs[7]:  # Landbouw & Visserij
             if st.checkbox("Landbouw & Visserij"):
                 st.markdown("##### Landbouw & Visserij subcategorieën")
                 category_filters['landbouw_visserij'] = {
-                    'landbouw': st.checkbox("Landbouw"),
-                    'visserij': st.checkbox("Visserij")
+                    'landbouw': st.checkbox("Landbouw", key="landbouw_main"),
+                    'visserij': st.checkbox("Visserij", key="visserij_main")
                 }
 
         with tabs[8]:  # Levensbeschouwing
             if st.checkbox("Levensbeschouwing"):
                 st.markdown("##### Levensbeschouwing subcategorieën")
                 category_filters['levensbeschouwing'] = {
-                    'levensbeschouwing': st.checkbox("Levensbeschouwing")
+                    'levensbeschouwing': st.checkbox("Levensbeschouwing", key="levensbeschouwing_main")
                 }
 
         with tabs[9]:  # Milieu
             if st.checkbox("Milieu"):
                 st.markdown("##### Milieu subcategorieën")
                 category_filters['milieu'] = {
-                    'afvalverwerking': st.checkbox("Afvalverwerking"),
-                    'bodemverontreiniging': st.checkbox("Bodemverontreiniging"),
-                    'luchtkwaliteit': st.checkbox("Luchtkwaliteit"),
-                    'milieueducatie': st.checkbox("Milieueducatie"),
-                    'vervuilingsreductie': st.checkbox("Vervuilingsreductie")
+                    'afvalverwerking': st.checkbox("Afvalverwerking", key="milieu_afval"),
+                    'bodemverontreiniging': st.checkbox("Bodemverontreiniging", key="milieu_bodem"),
+                    'luchtkwaliteit': st.checkbox("Luchtkwaliteit", key="milieu_lucht"),
+                    'milieueducatie': st.checkbox("Milieueducatie", key="milieu_educatie"),
+                    'vervuilingsreductie': st.checkbox("Vervuilingsreductie", key="milieu_vervuiling")
                 }
 
         with tabs[10]:  # Natuurbeheer
@@ -242,7 +298,7 @@ def main():
                     'overige_regelingen': st.checkbox("Overige regelingen")
                 }
                 if st.checkbox("Innovatie", key="onderzoek_innovatie"):
-                    st.markdown("##### Innovatie subcategorieën")
+                    st.markdown("###### Innovatie subcategorieën")
                     category_filters['onderzoek']['innovatie'] = {
                         'bedrijfsparticipatie': st.checkbox("Bedrijfsparticipatie", key="onderzoek_innovatie_bedrijfsparticipatie"),
                         'procesinnovatie': st.checkbox("Procesinnovatie", key="onderzoek_innovatie_procesinnovatie"),
@@ -251,7 +307,7 @@ def main():
                         'sociale_innovatie': st.checkbox("Sociale innovatie", key="onderzoek_innovatie_sociale")
                     }
                 if st.checkbox("Wetenschap", key="onderzoek_wetenschap"):
-                    st.markdown("##### Wetenschap subcategorieën")
+                    st.markdown("###### Wetenschap subcategorieën")
                     category_filters['onderzoek']['wetenschap'] = {
                         'formele_wetenschappen': st.checkbox("Formele wetenschappen"),
                         'fundamenteel_onderzoek': st.checkbox("Fundamenteel onderzoek"),
@@ -276,14 +332,32 @@ def main():
             if st.checkbox("Sport, Recreatie & Toerisme"):
                 st.markdown("##### Sport, Recreatie & Toerisme subcategorieën")
                 category_filters['sport_recreatie_toerisme'] = {
-                    'sport_recreatie_toerisme': st.checkbox("Sport, Recreatie & Toerisme")
+                    'recreatie_en_ontspanning': st.checkbox("Recreatie en ontspanning"),
+                    'sport': {
+                        'breedtesport': st.checkbox("Breedtesport"),
+                        'gehandicaptensport': st.checkbox("Gehandicaptensport"),
+                        'topsport': st.checkbox("Topsport")
+                    },
+                    'toerisme': st.checkbox("Toerisme")
                 }
+                if st.checkbox("Sport"):
+                    st.markdown("###### Sport subcategorieën")
+                    category_filters['sport_recreatie_toerisme']['sport'] = {
+                        'breedtesport': st.checkbox("Breedtesport"),
+                        'gehandicaptensport': st.checkbox("Gehandicaptensport"),
+                        'topsport': st.checkbox("Topsport")
+                    }
 
         with tabs[16]:  # Transport & Mobiliteit
             if st.checkbox("Transport & Mobiliteit"):
                 st.markdown("##### Transport & Mobiliteit subcategorieën")
                 category_filters['transport_mobiliteit'] = {
-                    'transport_mobiliteit': st.checkbox("Transport & Mobiliteit")
+                    'lucht': st.checkbox("Lucht"),
+                    'ruimtevaart': st.checkbox("Ruimtevaart"),
+                    'spoor': st.checkbox("Spoor"),
+                    'transport_en_brandstofbesparing': st.checkbox("Transport en brandstofbesparing"),
+                    'water': st.checkbox("Water"),
+                    'weg': st.checkbox("Weg")
                 }
 
         with tabs[17]:  # Veiligheid
@@ -334,7 +408,8 @@ def main():
                         else:
                             formatted_categories[main_category] = subcategories if subcategories else None
 
-                    # Retrieve results with formatted filters
+                    logger.debug(f"Formatted categories:\n\n{formatted_categories}")                   
+                    # Retrieve both sets of results
                     results, nodes_embed = retrieve_subsidies(
                         user_input,
                         include_national=include_national,
@@ -343,15 +418,33 @@ def main():
                         status=selected_status
                     )
                     
-                    # Display results
-                    st.subheader(f"🎯 Gevonden resultaten: {len(results)}")
+                    results2, nodes_embed2 = retrieve_subsidies(
+                        user_input,
+                        include_national=include_national,
+                        regions=selected_regions,
+                        categories=formatted_categories,
+                        status=selected_status,
+                        collection_name="vindsub_subsidies_2024_v1_openai",
+                        embed_model="openai"
+                    )
                     
-                    # Display each result
-                    for node in results:
-                        display_node(node)
+                    # Create two columns for side-by-side comparison
+                    col_left, col_right = st.columns(2)
+                    
+                    with col_left:
+                        st.subheader(f"🎯 Resultaten Set 1: Top {len(results)}")
+                        for node in results:
+                            display_node(node)
+                            
+                    with col_right:
+                        st.subheader(f"🎯 Resultaten Set 2: Top {len(results2)}")
+                        for node in results2:
+                            display_node(node)
                         
                 except Exception as e:
-                    st.error(f"Er is een fout opgetreden: {str(e)}")
+                    error_msg = f"Error: {str(e)}\n{traceback.format_exc()}"
+                    logger.error(error_msg)  # This will print to terminal
+                    st.error(f"Er is een fout opgetreden: {str(e)}")  # This will show in UI
         else:
             st.warning("Voer eerst een zoekopdracht in.")
 

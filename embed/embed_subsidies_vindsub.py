@@ -13,6 +13,7 @@ from datetime import datetime
 from llama_index.core import Settings, Document, VectorStoreIndex, StorageContext
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.embeddings.cohere import CohereEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core.node_parser import SentenceSplitter
 
 from qdrant_client import QdrantClient
@@ -246,7 +247,20 @@ def embed_documents(documents: list[Document], query_collection_name: str) -> No
         model_name="embed-english-v3.0",
         input_type="search_query",
     )
-    Settings.embed_model = embed_model
+
+    chunk_size = 512
+    chunk_overlap = 20
+
+    # OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    # openai_api_key = OPENAI_API_KEY
+
+    # embed_model = OpenAIEmbedding(
+    #     model="text-embedding-3-large",
+    #     api_key=openai_api_key,
+    # )
+
+    # chunk_size = 4096
+    # chunk_overlap = 512
 
     QDRANT_API_KEY = os.getenv('QDRANT_API_KEY')
     qdrant_api_key = QDRANT_API_KEY
@@ -264,8 +278,7 @@ def embed_documents(documents: list[Document], query_collection_name: str) -> No
     start = time.time()
 
     # Settings for LlamaIndex
-    chunk_size = 512
-    chunk_overlap = 20
+    Settings.embed_model = embed_model
     Settings.chunk_size = chunk_size
     Settings.chunk_overlap = chunk_overlap
     Settings.text_splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
@@ -335,19 +348,48 @@ def save_documents(documents: list[Document], save_dir: str) -> None:
         pickle.dump(documents, f)
     print("Documents saved successfully!")
 
+def load_latest_documents(save_dir: str) -> list[Document]:
+    """
+    Load the most recently saved documents from the specified directory.
+    
+    Args:
+        save_dir (str): Directory path where documents are saved
+        
+    Returns:
+        list[Document]: List of loaded documents
+    """
+    save_path = Path(save_dir)
+    if not save_path.exists():
+        raise FileNotFoundError(f"Directory not found: {save_dir}")
+    
+    # Find all pickle files in directory
+    pickle_files = list(save_path.glob("documents_*.pkl"))
+    if not pickle_files:
+        raise FileNotFoundError(f"No document files found in {save_dir}")
+    
+    # Get the most recent file based on timestamp in filename
+    latest_file = max(pickle_files, key=lambda x: x.stat().st_mtime)
+    print(f"\nLoading documents from: {latest_file}")
+    
+    # Load documents
+    with open(latest_file, 'rb') as f:
+        documents = pickle.load(f)
+    print(f"Successfully loaded {len(documents)} documents")
+    return documents
+
 def main():
     print("\nStarting main function...")
-    start_time = time.time()
+    total_start_time = time.time()
     
     # Define the paths to your JSON files
     json_paths = [
         Path("/Users/delonsaks/Documents/subsidies-dot-io/data/parse_results/parse_subsidy_text_results_national_1_20_cleaned.json"),
-        # Path("../data/parse_results/parse_subsidy_text_results_national_40_60_cleaned.json"),
-        # Path("../data/parse_results/parse_subsidy_text_results_national_60_74_cleaned.json"),
-        # Path("../data/parse_results/parse_subsidy_text_results_regional_1_19_cleaned.json"),
-        # Path("../data/parse_results/parse_subsidy_text_results_regional_38_52_cleaned.json"),
-        # Path("../data/parse_results/parse_subsidy_text_results_regional_38_52_cleaned.json"),
-        # Path("../data/parse_results/parse_subsidy_text_results_regional_53_65_cleaned.json"),
+        Path("/Users/delonsaks/Documents/subsidies-dot-io/data/parse_results/parse_subsidy_text_results_national_40_60_cleaned.json"),
+        Path("/Users/delonsaks/Documents/subsidies-dot-io/data/parse_results/parse_subsidy_text_results_national_60_74_cleaned.json"),
+        Path("/Users/delonsaks/Documents/subsidies-dot-io/data/parse_results/parse_subsidy_text_results_regional_1_19_cleaned.json"),
+        Path("/Users/delonsaks/Documents/subsidies-dot-io/data/parse_results/parse_subsidy_text_results_regional_38_52_cleaned.json"),
+        Path("/Users/delonsaks/Documents/subsidies-dot-io/data/parse_results/parse_subsidy_text_results_regional_38_52_cleaned.json"),
+        Path("/Users/delonsaks/Documents/subsidies-dot-io/data/parse_results/parse_subsidy_text_results_regional_53_65_cleaned.json"),
     ]
     
     print(f"Found {len(json_paths)} JSON files to process")
@@ -358,14 +400,16 @@ def main():
     if subsidies:
         print(f"Successfully loaded {len(subsidies)} subsidies")
         
-        # Create Documents from subsidies
+        # Document creation timing
+        doc_creation_start = time.time()
         print("\nStarting document creation...")
-        documents = create_documents_from_subsidies(subsidies[0:5])
-        print(f"Created {len(documents)} Documents")
+        documents = create_documents_from_subsidies(subsidies)
+        doc_creation_time = time.time() - doc_creation_start
+        print(f"Created {len(documents)} Documents in {doc_creation_time:.2f} seconds")
         
-        # Save documents
         save_dir = "/Users/delonsaks/Documents/subsidies-dot-io/data/vindsubsidies"
-        save_documents(documents, save_dir)
+        # Load the latest documents
+        documents = load_latest_documents(save_dir)
         
         # Example: Print first document's text and metadata
         if documents:
@@ -373,19 +417,24 @@ def main():
             print(f"Text: {documents[0].text[:200]}...")
             print(f"Metadata: {documents[0].metadata}")
             
-            query_collection_name = "vindsub_subsidies_2024_v1"
+            query_collection_name = "vindsub_subsidies_2024_v1_cohere"
             
             # Start embedding process
             print("\nStarting embedding process...")
+            embedding_start = time.time()
             try:
                 embed_documents(documents, query_collection_name)
+                embedding_time = time.time() - embedding_start
                 print("Successfully completed embedding process!")
             except Exception as e:
                 print(f"Error during embedding: {str(e)}")
 
-    # Calculate and print execution time
-    execution_time = time.time() - start_time
-    print(f"\nTotal execution time: {execution_time:.2f} seconds")
+    # Calculate and print execution times
+    total_time = time.time() - total_start_time
+    print("\nExecution Times:")
+    print(f"Document Creation: {doc_creation_time:.2f} seconds")
+    print(f"Embedding Process: {embedding_time:.2f} seconds")
+    print(f"Total Execution: {total_time:.2f} seconds")
 
 if __name__ == "__main__":
     main()

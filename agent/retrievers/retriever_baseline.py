@@ -5,6 +5,7 @@ from llama_index.core.program import FunctionCallingProgram
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters, FilterOperator
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.embeddings.cohere import CohereEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core import Settings, Document, VectorStoreIndex, StorageContext
 from llama_index.postprocessor.cohere_rerank import CohereRerank
 from llama_index.core.schema import NodeWithScore
@@ -47,7 +48,6 @@ cohere_api_key = COHERE_API_KEY
 
 QDRANT_API_KEY = os.getenv('QDRANT_API_KEY')
 qdrant_api_key = QDRANT_API_KEY
-
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 OpenAI.api_key = OPENAI_API_KEY
@@ -251,147 +251,103 @@ def extract_parameters(user_input: str) -> str:
 #     return nodes_reranked, nodes_embed
 
 def retrieve_subsidies(
-    query: str, 
+    user_input: str, 
     include_national: bool = True, 
     regions: List[str] = None, 
     categories: dict = None,
-    status: List[str] = None
+    status: List[str] = None,
+    collection_name: str = "vindsub_subsidies_2024_v1_cohere",
+    embed_model: str = "cohere"
 ):
     """
     Retrieve subsidies based on query and filters
     """
-    try:
-        # Convert the categories dict to CategorieSelectie model
-        category_filters = CategorieSelectie(**categories) if categories else None
-        
-        filter_conditions = []
 
-        query_locations = []
-        if include_national:
-            query_locations.append('National')
-        if regions:
-            query_locations.extend(regions)
-
-        if query_locations:
-            filter_conditions.append(
-                FieldCondition(
-                    key="Bereik",
-                    match=MatchAny(any=query_locations),
-                )
-            )
-
-        if status:
-            filter_conditions.append(
-                FieldCondition(
-                    key="Status",
-                    match=MatchAny(any=status),
-                )
-            )
-
-        if category_filters:
-            category_conditions = []
-            
-            # Process each main category
-            for main_category, subcategories in category_filters.__dict__.items():
-                if isinstance(subcategories, dict):  # Only process if it's a dictionary
-                    # Check if the main category itself is selected (all subcategories should match)
-                    if any(isinstance(v, bool) and v for v in subcategories.values()):
-                        # Create conditions for all possible subcategories under this main category
-                        subcategory_conditions = []
-                        for sub_key, sub_value in subcategories.items():
-                            if isinstance(sub_value, dict):
-                                # Handle nested subcategories (e.g., uitstroom_verbetering)
-                                for nested_key, _ in sub_value.items():
-                                    subcategory_conditions.append(
-                                        FieldCondition(
-                                            key=f"categories.{main_category}.{sub_key}.{nested_key}",
-                                            match=MatchValue(value=True)
-                                        )
-                                    )
-                            else:
-                                subcategory_conditions.append(
-                                    FieldCondition(
-                                        key=f"categories.{main_category}.{sub_key}",
-                                        match=MatchValue(value=True)
-                                    )
-                                )
-                        # Add an OR condition for any subcategory
-                        if subcategory_conditions:
-                            category_conditions.append(
-                                Filter(
-                                    should=subcategory_conditions,
-                                    min_should_match=1  # Match at least one subcategory
-                                )
-                            )
-                    else:
-                        # Process specific selected subcategories
-                        for sub_key, sub_value in subcategories.items():
-                            if isinstance(sub_value, dict):
-                                # Handle nested subcategories (e.g., uitstroom_verbetering)
-                                for nested_key, nested_value in sub_value.items():
-                                    if nested_value:  # Only add if True
-                                        category_conditions.append(
-                                            FieldCondition(
-                                                key=f"categories.{main_category}.{sub_key}.{nested_key}",
-                                                match=MatchValue(value=True)
-                                            )
-                                        )
-                            elif sub_value:  # Only add if True
-                                category_conditions.append(
-                                    FieldCondition(
-                                        key=f"categories.{main_category}.{sub_key}",
-                                        match=MatchValue(value=True)
-                                    )
-                                )
-            
-            # Add category conditions with OR logic if any exist
-            if category_conditions:
-                filter_conditions.append(
-                    Filter(
-                        should=category_conditions
-                    )
-                )
-
-        # Add location filter
-        query_locations = []
-        if include_national:
-            query_locations.append('National')
-        if regions:
-            query_locations.extend(regions)
-
-        if query_locations:
-            filter_conditions.append(
-                FieldCondition(
-                    key="Bereik",
-                    match=MatchAny(any=query_locations)
-                )
-            )
-
-        if status:
-            filter_conditions.append(
-                FieldCondition(
-                    key="Status",
-                    match=MatchAny(any=status)
-                )
-            )
-
-        # Combine all conditions into a single Filter with AND logic
-        combined_filter = Filter(
-            must=filter_conditions
-        ) if filter_conditions else None
-
-        print(f'combined_filter: {combined_filter}')
-
-        # embed model
+    if embed_model == "cohere":
         embed_model = CohereEmbedding(
             api_key=cohere_api_key,
             model_name="embed-english-v3.0",
             input_type="search_query",
         )
-        Settings.embed_model = embed_model
+
+
+    elif embed_model == "openai":
+        embed_model = OpenAIEmbedding(
+            model="text-embedding-3-large",
+            api_key=OPENAI_API_KEY,
+        )
+
+    Settings.embed_model = embed_model
+
+    try:
+        # Convert the categories dict to CategorieSelectie model
+        category_filters = CategorieSelectie(**categories) if categories else None
+        
+        # Create must conditions list
+        must_conditions = []
+
+        # Build query_locations list
+        query_locations = []
+        if include_national:
+            query_locations.append('National')
+        if regions:
+            query_locations.extend(regions)
+
+        # Add location filter only if query_locations exist
+        if query_locations:
+            location_condition = FieldCondition(
+                key="Bereik",
+                match=MatchAny(any=query_locations)
+            )
+            must_conditions.append(location_condition)
+
+        # Add status filter if provided
+        if status:
+            status_condition = FieldCondition(
+                key="Status",
+                match=MatchAny(any=status)
+            )
+            must_conditions.append(status_condition)
+
+        # Create category conditions
+        category_conditions = []
+        if category_filters:
+            for main_category, subcategories in category_filters.model_dump().items():
+                if subcategories is None:
+                    continue
+                    
+                if isinstance(subcategories, dict):
+                    for sub_key, sub_value in subcategories.items():
+                        if isinstance(sub_value, dict):
+                            for nested_key, nested_value in sub_value.items():
+                                if nested_value is True:
+                                    category_conditions.append(
+                                        FieldCondition(
+                                            key=f"Categories.{main_category}.{sub_key}.{nested_key}",
+                                            match=MatchValue(value=True)
+                                        )
+                                    )
+                        elif sub_value is True:
+                            category_conditions.append(
+                                FieldCondition(
+                                    key=f"Categories.{main_category}.{sub_key}",
+                                    match=MatchValue(value=True)
+                                )
+                            )
+
+        # Add category filter if conditions exist
+        if category_conditions:
+            must_conditions.append(
+                Filter(should=category_conditions)
+            )
+
+        # Create final combined filter only if we have conditions
+        combined_filter = Filter(must=must_conditions) if must_conditions else None
+
+        print(f'combined_filter: {combined_filter}')
 
         postprocessor = CohereRerank(
-            top_n=5,
+            top_n=10,
             model="rerank-v3.5",
             api_key=cohere_api_key,
         )
@@ -400,7 +356,7 @@ def retrieve_subsidies(
                             api_key=qdrant_api_key,
                             timeout=3600)
         
-        query_collection_name = "vindsub_subsidies_2024_v1"
+        query_collection_name = collection_name
         vector_store = QdrantVectorStore(
                     query_collection_name, 
                     client=client, 
@@ -428,6 +384,10 @@ def check_nodes_for_subsidy(subsidy_titles: List[str], nodes: List[NodeWithScore
             matching_nodes.append((node.node.metadata.get('title'), index))
     return matching_nodes if matching_nodes else []
 
+
+
+
+
 if __name__ == "__main__":
 
     user_input = """
@@ -437,7 +397,389 @@ Veel communicatie gebeurt via beeld en schrift. Denk aan TV, computer, tablets, 
     if not user_input:
         user_input = input("Please enter your subsidy query: ")
 
-    nodes_reranked, nodes_embed = retrieve_subsidies(user_input)
+    # categorie_dict = {'gezondheidszorg_welzijn': 
+    #                   {'gezondheidszorg': 
+    #                    {'geestelijke_gezondheidszorg': None, 
+    #                     'gehandicaptenzorg': None, 
+    #                     'gezondheidsbescherming': None, 
+    #                     'gezondheidszorg_ziekenhuizen': None, 
+    #                     'zorgvoorziening': True}, 
+    #                    'welzijn': 
+    #                    {'armoedebestrijding': None, 
+    #                     'buurtwerk': None, 
+    #                     'dierenwelzijn': None, 
+    #                     'emancipatie': None, 
+    #                     'gehandicapten': None, 
+    #                     'integratie_nieuwkomers': None, 
+    #                     'jeugd_jongeren': None, 
+    #                     'ouderen': None, 
+    #                     'wonen_zorg_domotica': None}
+    #                    }
+    #                    }
+    
+    categorie_dict = {
+  "arbeidsmarkt": {
+    "activering_en_instroom": False,
+    "gesubsidieerd_werk": False,
+    "integratie_en_reintegratie": False,
+    "leeftijdsbewust_beleid": False,
+    "werknemersopleiding": False,
+    "uitstroom_verbetering": {
+      "werkervaring_evc": False,
+      "loopbaanbegeleiding": False,
+      "uitstroom_verbetering": False,
+      "loonkosten": False,
+      "vacaturevervulling": False
+    },
+    "stages_werkleertrajecten": False
+  },
+  "bouw": {
+    "afwerking": False,
+    "burgerlijke_utiliteitsbouw": False,
+    "grond_weg_waterbouw": False,
+    "installatietechniek": False,
+    "nieuwbouw": False,
+    "renovatie": False
+  },
+  "cultuur": {
+    "amateurkunst": False,
+    "archieven": False,
+    "architectuur_stedenbouw": False,
+    "beeldende_kunst_vormgeving": False,
+    "cultuureducatie": False,
+    "dans": False,
+    "film": False,
+    "landschapsarchitectuur": False,
+    "letteren_bibliotheken": False,
+    "media": False,
+    "monumenten_erfgoed_archeologie": False,
+    "musea": False,
+    "muziek_muziektheater": False,
+    "theater": False
+  },
+  "energie": {
+    "duurzame_energie": {
+      "bio_energie": False,
+      "geothermische_energie": False,
+      "waterenergie": False,
+      "windenergie": False,
+      "zonne_energie_fotovoltaische_energie": False
+    },
+    "energiebesparing_isolatie_en_verduurzaming": False,
+    "fossiele_energie": False,
+    "kernenergie": False
+  },
+  "export_internationalisering_ontwikkelingssamenwerking": {
+    "export_en_internationalisering": {
+      "export_krediet_verzekering_garantie": False,
+      "internationalisering": True,
+      "promotionele_activiteiten": False
+    },
+    "ontwikkelingssamenwerking": False,
+    "stedenbanden_en_uitwisseling": False
+  },
+  "gezondheidszorg_welzijn": {
+    "gezondheidszorg": {
+      "geestelijke_gezondheidszorg": False,
+      "gehandicaptenzorg": False,
+      "gezondheidsbescherming": False,
+      "gezondheidszorg_ziekenhuizen": False,
+      "zorgvoorziening": False
+    },
+    "welzijn": {
+      "armoedebestrijding": False,
+      "buurtwerk": False,
+      "dierenwelzijn": False,
+      "emancipatie": False,
+      "gehandicapten": False,
+      "integratie_nieuwkomers": False,
+      "jeugd_jongeren": False,
+      "ouderen": False,
+      "wonen_zorg_domotica": False
+    }
+  },
+  "ict": {
+    "hardware": True,
+    "infrastructuur": False,
+    "internet_toepassingen": False,
+    "software": True,
+    "telecommunicatie": False
+  },
+  "landbouw_visserij": {
+    "landbouw": {
+      "akkerbouw": False,
+      "biologische_landbouw": False,
+      "bosbouw": False,
+      "tuinbouw": False,
+      "veehouderij": False
+    },
+    "visserij": {
+      "aquacultuur": False,
+      "visserij": False
+    }
+  },
+  "levensbeschouwing": {
+    "levensbeschouwing": False
+  },
+  "milieu": {
+    "afvalverwijdering_opslag_waterzuivering": False,
+    "milieueducatie_voorlichting": False,
+    "vermindering_vervuiling": False
+  },
+  "natuurbeheer": {
+    "aankoop_en_aanleg": False,
+    "beheer_en_instandhouding": False,
+    "inrichting_en_functieverandering": False,
+    "soortenbescherming_en_biodiversiteit": False
+  },
+  "ondersteunend_bedrijfsleven": {
+    "ondersteuning_grote_onderneming": False,
+    "ondersteuning_mkb": True,
+    "ondersteuning_starter": False,
+    "ondersteuning_zelfstandige": False
+  },
+  "onderwijs": {
+    "hoger_en_universitair_onderwijs": False,
+    "middelbaar_beroepsonderwijs_en_volwasseneneducatie": False,
+    "primair_onderwijs": False,
+    "voortgezet_onderwijs": False
+  },
+  "onderzoek": {
+    "innovatie": {
+      "deelname_bedrijfsleven_aan_onderzoek": True,
+      "procesinnovatie": True,
+      "productinnovatie": True,
+      "programmatuur": True,
+      "sociale_innovatie": False
+    },
+    "kennisoverdracht": False,
+    "wetenschap": {
+      "formele_wetenschappen": False,
+      "fundamenteel_onderzoek": False,
+      "geesteswetenschappen": False,
+      "geneeskunde": False,
+      "natuurwetenschappen": False,
+      "sociale_wetenschappen": False,
+      "toegepast_onderzoek": False
+    }
+  },
+  "overige_regelingen": {
+    "overige_regelingen": False
+  },
+  "regionale_ontwikkeling": {
+    "bedrijventerreinen": False,
+    "landelijk_gebied": False,
+    "stedelijk_gebied": True
+  },
+  "sport_recreatie_toerisme": {
+    "recreatie_en_ontspanning": False,
+    "sport": {
+      "breedtesport": False,
+      "gehandicaptensport": False,
+      "topsport": False
+    },
+    "toerisme": False
+  },
+  "transport_mobiliteit": {
+    "lucht": False,
+    "ruimtevaart": False,
+    "spoor": False,
+    "transport_en_brandstofbesparing": False,
+    "water": False,
+    "weg": False
+  },
+  "veiligheid": {
+        "brandweer_rampenbestrijding": False,
+        "criminaliteit_veiligheid": False,
+        "verkeersveiligheid": False,
+        "waterkeringen": False
+    }
+    }
+
+#     categorie_dict = {
+#   "arbeidsmarkt": {
+#     "activering_en_instroom": False,
+#     "gesubsidieerd_werk": False,
+#     "integratie_en_reintegratie": False,
+#     "leeftijdsbewust_beleid": False,
+#     "werknemersopleiding": False,
+#     "uitstroom_verbetering": {
+#       "werkervaring_evc": False,
+#       "loopbaanbegeleiding": False,
+#       "uitstroom_verbetering": False,
+#       "loonkosten": False,
+#       "vacaturevervulling": False
+#     },
+#     "stages_werkleertrajecten": False
+#   },
+#   "bouw": {
+#     "afwerking": False,
+#     "burgerlijke_utiliteitsbouw": False,
+#     "grond_weg_waterbouw": False,
+#     "installatietechniek": False,
+#     "nieuwbouw": True,
+#     "renovatie": False
+#   },
+#   "cultuur": {
+#     "amateurkunst": False,
+#     "archieven": False,
+#     "architectuur_stedenbouw": False,
+#     "beeldende_kunst_vormgeving": False,
+#     "cultuureducatie": False,
+#     "dans": False,
+#     "film": False,
+#     "landschapsarchitectuur": False,
+#     "letteren_bibliotheken": False,
+#     "media": False,
+#     "monumenten_erfgoed_archeologie": False,
+#     "musea": False,
+#     "muziek_muziektheater": False,
+#     "theater": False
+#   },
+#   "energie": {
+#     "duurzame_energie": {
+#       "bio_energie": False,
+#       "geothermische_energie": False,
+#       "waterenergie": False,
+#       "windenergie": False,
+#       "zonne_energie_fotovoltaische_energie": False
+#     },
+#     "energiebesparing_isolatie_en_verduurzaming": False,
+#     "fossiele_energie": False,
+#     "kernenergie": False
+#   },
+#   "export_internationalisering_ontwikkelingssamenwerking": {
+#     "export_en_internationalisering": {
+#       "export_krediet_verzekering_garantie": False,
+#       "internationalisering": False,
+#       "promotionele_activiteiten": False
+#     },
+#     "ontwikkelingssamenwerking": False,
+#     "stedenbanden_en_uitwisseling": False
+#   },
+#   "gezondheidszorg_welzijn": {
+#     "gezondheidszorg": {
+#       "geestelijke_gezondheidszorg": False,
+#       "gehandicaptenzorg": False,
+#       "gezondheidsbescherming": False,
+#       "gezondheidszorg_ziekenhuizen": False,
+#       "zorgvoorziening": False
+#     },
+#     "welzijn": {
+#       "armoedebestrijding": False,
+#       "buurtwerk": False,
+#       "dierenwelzijn": False,
+#       "emancipatie": False,
+#       "gehandicapten": False,
+#       "integratie_nieuwkomers": False,
+#       "jeugd_jongeren": False,
+#       "ouderen": False,
+#       "wonen_zorg_domotica": False
+#     }
+#   },
+#   "ict": {
+#     "hardware": False,
+#     "infrastructuur": False,
+#     "internet_toepassingen": False,
+#     "software": False,
+#     "telecommunicatie": False
+#   },
+#   "landbouw_visserij": {
+#     "landbouw": {
+#       "akkerbouw": False,
+#       "biologische_landbouw": False,
+#       "bosbouw": False,
+#       "tuinbouw": False,
+#       "veehouderij": False
+#     },
+#     "visserij": {
+#       "aquacultuur": False,
+#       "visserij": False
+#     }
+#   },
+#   "levensbeschouwing": {
+#     "levensbeschouwing": False
+#   },
+#   "milieu": {
+#     "afvalverwijdering_opslag_waterzuivering": False,
+#     "milieueducatie_voorlichting": False,
+#     "vermindering_vervuiling": False
+#   },
+#   "natuurbeheer": {
+#     "aankoop_en_aanleg": False,
+#     "beheer_en_instandhouding": False,
+#     "inrichting_en_functieverandering": False,
+#     "soortenbescherming_en_biodiversiteit": False
+#   },
+#   "ondersteunend_bedrijfsleven": {
+#     "ondersteuning_grote_onderneming": False,
+#     "ondersteuning_mkb": False,
+#     "ondersteuning_starter": False,
+#     "ondersteuning_zelfstandige": False
+#   },
+#   "onderwijs": {
+#     "hoger_en_universitair_onderwijs": False,
+#     "middelbaar_beroepsonderwijs_en_volwasseneneducatie": False,
+#     "primair_onderwijs": False,
+#     "voortgezet_onderwijs": False
+#   },
+#   "onderzoek": {
+#     "innovatie": {
+#       "deelname_bedrijfsleven_aan_onderzoek": False,
+#       "procesinnovatie": False,
+#       "productinnovatie": False,
+#       "programmatuur": False,
+#       "sociale_innovatie": False
+#     },
+#     "kennisoverdracht": False,
+#     "wetenschap": {
+#       "formele_wetenschappen": False,
+#       "fundamenteel_onderzoek": False,
+#       "geesteswetenschappen": False,
+#       "geneeskunde": False,
+#       "natuurwetenschappen": False,
+#       "sociale_wetenschappen": False,
+#       "toegepast_onderzoek": False
+#     }
+#   },
+#   "overige_regelingen": {
+#     "overige_regelingen": False
+#   },
+#   "regionale_ontwikkeling": {
+#     "bedrijventerreinen": False,
+#     "landelijk_gebied": False,
+#     "stedelijk_gebied": False
+#   },
+#   "sport_recreatie_toerisme": {
+#     "recreatie_en_ontspanning": False,
+#     "sport": {
+#       "breedtesport": False,
+#       "gehandicaptensport": False,
+#       "topsport": False
+#     },
+#     "toerisme": False
+#   },
+#   "transport_mobiliteit": {
+#     "lucht": False,
+#     "ruimtevaart": False,
+#     "spoor": False,
+#     "transport_en_brandstofbesparing": False,
+#     "water": False,
+#     "weg": False
+#   },
+#   "veiligheid": {
+#         "brandweer_rampenbestrijding": False,
+#         "criminaliteit_veiligheid": False,
+#         "verkeersveiligheid": False,
+#         "waterkeringen": False
+#     }
+#     }
+
+    nodes_reranked, nodes_embed = retrieve_subsidies(user_input, 
+                                                     include_national=False, 
+                                                     regions=["Noord-Brabant"], 
+                                                     categories=categorie_dict
+                                                     )
 
     subsidy_titles = [
         "Mkb Innovatiestimulering Topsectoren (TKI mkb-versterking en Mkb Innovatiestimulering Topsectoren - MIT) - Regeling nationale EZK- en LNV-subsidies -",
